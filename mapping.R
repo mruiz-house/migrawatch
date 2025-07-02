@@ -18,12 +18,14 @@ chicago_communities <- chicago_communities %>%
                                         'NEAR WEST SIDE', 'UPTOWN', 'LOWER WEST SIDE',
                                         'SOUTH CHICAGO', 'PULLMAN', 'EAST SIDE', 'HEGEWISCH',
                                         'BRIDGEPORT', 'EDGEWATER', 'SOUTH SHORE',
-                                        'ROSELAND', 'CALUMET HEIGHTS','AVALON PARK') 
+                                        'ROSELAND', 'CALUMET HEIGHTS','AVALON PARK',
+                                        'GAGE PARK', 'BRIGHTON PARK', 'CHICAGO LAWN',
+                                        'NEW CITY') 
                                     ~ "Yes",
                                     TRUE ~ "No"))
 
 # add in teams 
-# PUÑO
+# PUÑO, 
 chicago_communities <- chicago_communities %>%
   mutate(team_name = case_when(community ==
                                  'LOWER WEST SIDE' ~ "PUÑO",
@@ -54,10 +56,18 @@ chicago_communities <- chicago_communities %>%
                                  c('PULLMAN', 'SOUTH SHORE',
                                    'ROSELAND', 'CALUMET HEIGHTS','AVALON PARK') ~ 'Far South',
                                TRUE ~ team_name))
+
+# Southwest 
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community %in%
+                                 c('GAGE PARK', 'BRIGHTON PARK', 'CHICAGO LAWN',
+                                   'NEW CITY') ~ 'Southwest Side',
+                               TRUE ~ team_name))
+
 # Plot the community areas
 ggplot(chicago_communities) + 
   geom_sf(aes(fill = rapid_response), color = "black", alpha = 0.5) +
-  geom_sf_text(data = chicago_communities, aes_string(label = "team_name"), size = 1) +
+  geom_sf_text(data = chicago_communities, aes_string(label = "team_name"), size = 1.25) +
   labs(title = "Rapid Response Teams in Chicago",
        subtitle = "Official ICIRR Affiliates") +
   theme_minimal()
