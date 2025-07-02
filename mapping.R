@@ -10,20 +10,54 @@ chicago_communities <- st_read(geojson_file)
 
 # Add columns for rapid response
 chicago_communities <- chicago_communities %>%
-      mutate(rapid_response = case_when(community %in%
-      c("KENWOOD", "WOODLAWN", 'HYDE PARK'
-        'ROGERS PARK', 'ALBANY PARK', 'PORTAGE PARK', 
-        'IRVING PARK', 'BELMONT CRAGIN', 'HERMOSA', 	
-        'AVONDALE', 'LOGAN SQUARE', ) 
-      ~ "Yes",
-      TRUE ~ rapid_response))
+  mutate(rapid_response = case_when(community %in%
+                                      c('KENWOOD', 'WOODLAWN', 'HYDE PARK',
+                                        'ROGERS PARK', 'ALBANY PARK', 'PORTAGE PARK', 
+                                        'IRVING PARK', 'BELMONT CRAGIN', 'HERMOSA', 	
+                                        'AVONDALE', 'LOGAN SQUARE', 'HUMBOLDT PARK', 
+                                        'NEAR WEST SIDE', 'UPTOWN', 'LOWER WEST SIDE',
+                                        'SOUTH CHICAGO', 'PULLMAN', 'EAST SIDE', 'HEGEWISCH',
+                                        'BRIDGEPORT', 'EDGEWATER', 'SOUTH SHORE',
+                                        'ROSELAND', 'CALUMET HEIGHTS','AVALON PARK') 
+                                    ~ "Yes",
+                                    TRUE ~ "No"))
 
 # add in teams 
+# PUÑO
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community ==
+                                 'LOWER WEST SIDE' ~ "PUÑO",
+                               TRUE ~  NA_character_))
 
+# Hyde Park 
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community %in%
+                                 c('KENWOOD', 'WOODLAWN', 'HYDE PARK') 
+                               ~ "Hyde Park",
+                               TRUE ~ team_name))
+# Northwest Defense 
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community %in%
+                                 c('PORTAGE PARK', 
+                                   'IRVING PARK', 
+                                   'BELMONT CRAGIN', 
+                                   'HERMOSA', 	
+                                   'AVONDALE', 
+                                   'LOGAN SQUARE', 
+                                   'HUMBOLDT PARK') 
+                               ~ "Northwest Defense",
+                               TRUE ~ team_name))
+
+# Far South
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community %in%
+                                 c('PULLMAN', 'SOUTH SHORE',
+                                   'ROSELAND', 'CALUMET HEIGHTS','AVALON PARK') ~ 'Far South',
+                               TRUE ~ team_name))
 # Plot the community areas
-ggplot() +
-  geom_sf(data = chicago_communities, fill = "lightblue", color = "black", alpha = 0.5) +
-  geom_sf_text(data = chicago_communities, aes_string(label = "community"), size = 1) +
+ggplot(chicago_communities) + 
+  geom_sf(aes(fill = rapid_response), color = "black", alpha = 0.5) +
+  geom_sf_text(data = chicago_communities, aes_string(label = "team_name"), size = 1) +
   labs(title = "Rapid Response Teams in Chicago",
        subtitle = "Official ICIRR Affiliates") +
   theme_minimal()
