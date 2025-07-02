@@ -20,15 +20,15 @@ chicago_communities <- chicago_communities %>%
                                         'BRIDGEPORT', 'EDGEWATER', 'SOUTH SHORE',
                                         'ROSELAND', 'CALUMET HEIGHTS','AVALON PARK',
                                         'GAGE PARK', 'BRIGHTON PARK', 'CHICAGO LAWN',
-                                        'NEW CITY') 
+                                        'NEW CITY', 'LINCOLN PARK', 'LAKE VIEW') 
                                     ~ "Yes",
                                     TRUE ~ "No"))
 
 # add in teams 
 # PUÑO, 
 chicago_communities <- chicago_communities %>%
-  mutate(team_name = case_when(community ==
-                                 'LOWER WEST SIDE' ~ "PUÑO",
+  mutate(team_name = case_when(community %in% c('NEAR WEST SIDE', 'LOWER WEST SIDE')
+                                  ~ "PUÑO",
                                TRUE ~  NA_character_))
 
 # Hyde Park 
@@ -62,6 +62,17 @@ chicago_communities <- chicago_communities %>%
   mutate(team_name = case_when(community %in%
                                  c('GAGE PARK', 'BRIGHTON PARK', 'CHICAGO LAWN',
                                    'NEW CITY') ~ 'Southwest Side',
+                               TRUE ~ team_name))
+# Uptown 
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community %in%
+                                 c('EDGEWATER', 'UPTOWN', 'LINCOLN PARK', 'LAKE VIEW') ~ 'Uptown',
+                               TRUE ~ team_name))
+
+# Chinatown 
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community %in%
+                                 c('BRIDGEPORT', 'FULLER PARK') ~ 'Bridgeport',
                                TRUE ~ team_name))
 
 # Plot the community areas
