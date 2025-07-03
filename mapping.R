@@ -20,7 +20,7 @@ chicago_communities <- chicago_communities %>%
                                         'BRIDGEPORT', 'EDGEWATER', 'SOUTH SHORE',
                                         'ROSELAND', 'CALUMET HEIGHTS','AVALON PARK',
                                         'GAGE PARK', 'BRIGHTON PARK', 'CHICAGO LAWN',
-                                        'NEW CITY', 'LINCOLN PARK', 'LAKE VIEW') 
+                                        'NEW CITY', 'LINCOLN PARK', 'LAKE VIEW', 'SOUTH LAWNDALE') 
                                     ~ "Yes",
                                     TRUE ~ "No"))
 
@@ -73,6 +73,12 @@ chicago_communities <- chicago_communities %>%
 chicago_communities <- chicago_communities %>%
   mutate(team_name = case_when(community %in%
                                  c('BRIDGEPORT', 'FULLER PARK') ~ 'Bridgeport',
+                               TRUE ~ team_name))
+
+# La Villita Se Defiende 
+chicago_communities <- chicago_communities %>%
+  mutate(team_name = case_when(community == 'SOUTH LAWNDALE'
+                                  ~ 'LVSD',
                                TRUE ~ team_name))
 
 # Plot the community areas
