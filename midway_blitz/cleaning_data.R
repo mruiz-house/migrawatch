@@ -5,7 +5,7 @@ library(lubridate)
 library(DT)
 
 ### II. Clean Data 
-data_midway <- read_csv('midway_blitz/operation_midway_blitz.csv',
+data_midway <- read_csv('midway_blitz/9.21.25_data.csv',
                         # add appropriate column names
                         col_names = c('location', 'date_time_reported',
                                       'unique_id', 'date_time_raid',
@@ -15,8 +15,10 @@ data_midway <- read_csv('midway_blitz/operation_midway_blitz.csv',
                                       'detention_centers', 'tactics_reported',
                                       'rapid_response_team', 'people_detained',
                                       'verified_by_rrt', 'OCAD_operator_uploaded',
-                                      'business_worksite', 'license_plate')) 
+                                      'business_worksite', 'license_plate', 'source')) 
 
+# Select all rows, delete columns 20 and 21 
+data_midway <-  data_midway[, 1:19]
 
 
 # Format the date and time correctly + make certain columns strings 
@@ -53,9 +55,17 @@ analysis_ready <- data_filtered %>%
 analysis_ready <- data_filtered %>%
   mutate(tactics_reported = case_when(unique_id == "09-15 West Chicago-813 Main St, West Chicago, IL 60185" ~ "Multiple Cars - 3", TRUE ~ tactics_reported),
          tactics_reported = case_when(unique_id == "09-15 Dixmoor-14700 Robey Ave, Dixmoor, IL 60426" ~ "Multiple Cars - 3, Sensitive Location - Outside School", TRUE ~ tactics_reported),
-         tactics_reported = case_when(unique_id == "09-11 Geneva-Kane Co. Courthouse (100 S 3rd St, Geneva, IL 60134)" ~ "Senistive Location - Courthouse", TRUE ~ tactics_reported))
-
-
-
+         tactics_reported = case_when(unique_id == "09-11 Geneva-Kane Co. Courthouse (100 S 3rd St, Geneva, IL 60134)" ~ "Sensitive Location - Courthouse", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "09-18 Chicago - North Lawndale - 2513 W Cullerton St, Chicago, IL 60608." ~ "Staging", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "09-20 Elgin-Hastings and Liberty/Route 25, Elgin" ~ "Pulling Up Cars (Traffic Stop", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "09-20 Elgin-Hastings and Liberty/Route 25, Elgin" ~ "Sensitive Location - University", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "09-17 Brighton Park/McKinley Park-Archer and Western" ~ "Multiple Agents - 2", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "9-19 Chicago - Little Village- Rockwell between 19th and 21st, 60608" ~ "Intimidating RR", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "09-17 Cicero-79th and Cicero" ~ "Multiple Cars - 3, Foot Chase", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "09-19 Chicago - Hermosa-Dickens and Kilbourn - 60639" ~ "Multiple Agents - 5, Multiple Cars - 3", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "" ~ "", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "" ~ "", TRUE ~ tactics_reported),
+         tactics_reported = case_when(unique_id == "" ~ "", TRUE ~ tactics_reported),
+)
   
               
