@@ -100,6 +100,14 @@ data_filtered <- data_filtered %>%
     unique_id == "09-15 Chicago - Little Village-2359 S Albany" ~ "Officers Reach Through Window To Unlock Car",
     unique_id == "09-16 Cicero-Roosevelt Rd & S Cicero Ave, Cicero, IL 60804" ~ "Violent Towards Detainee, Marked Vests - Police, Face Covering",
     unique_id == "09-16 Chicago - Princeton Park-200-232 W 87th St, Chicago, IL 60620" ~ "Pulling Up Vehicles, Face Covering",
+    unique_id == "09-20 Rolling Meadows-2252 Algonquin Pkwy, Rolling Meadows, IL 60008" ~ "Marked Vests - Police",
+    unique_id == "09-20 Rockford-15th Ave and Garden, Rockford IL" ~ "Marked Vests - ERO, Face Covering, Multiple Agents - 3, Unmarked Cars, RR Member Instigating",
+    unique_id == "09-19 Chicago - Little Village -31st and Albany headed to 26 down California, 60623" ~ "Marked Vests - Police, Face Covering, Multiple Cars",
+    unique_id == "09-19 Chicago - Hyde Park-4900 s lake shore drive, 60615" ~ "Marked Vests - Police, Face Covering",
+    unique_id == "09-19 Elgin-Villa and Wright St, 60120" ~ "Unmarked Cars",
+    unique_id == "09-19 Chicago - Homan Square-Harrison & Kedzie, 60612" ~ "Unmarked Cars",
+    unique_id == "09-18 Chicago- Humboldt Park-Central park and Division" ~ "Unmarked Cars, Multiple Agents, Face Covering, Pulling Up Cars",
+    unique_id == "09-18 Chicag0- Back of the Yards-5307 S Francisco" ~ "Staging or Circling" # Removing the pulling up cars label, doesn't seem to fit
     TRUE ~ tactics_reported
   ))
 
