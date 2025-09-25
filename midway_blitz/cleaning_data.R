@@ -99,7 +99,7 @@ data_filtered <- data_filtered %>%
     unique_id == "09-15 Chicago - Back of the Yards-47th and Western" ~ "Marked Vests - ERO",
     unique_id == "09-15 Chicago - Little Village-2359 S Albany" ~ "Officers Reach Through Window To Unlock Car",
     unique_id == "09-16 Cicero-Roosevelt Rd & S Cicero Ave, Cicero, IL 60804" ~ "Violent Towards Detainee, Marked Vests - Police, Face Covering",
-    unique_id == "09-16 Chicago - Princeton Park-200-232 W 87th St, Chicago, IL 60620" ~ "Pulling Up Vehicles, Face Covering"
+    unique_id == "09-16 Chicago - Princeton Park-200-232 W 87th St, Chicago, IL 60620" ~ "Pulling Up Vehicles, Face Covering",
     TRUE ~ tactics_reported
   ))
 
@@ -113,7 +113,7 @@ data_filtered <- data_filtered %>%
     unique_id == "09-17 Brighton Park-47th and Western" ~ "Hardware Store",
     unique_id == "09-17 Naperville - Menards. 715 Fort Hill Dr Naperville, IL 60540" ~ "Hardware Store",
     unique_id == "09-18 Chicago - NWS - Belmont-Fullerton & Menard" ~ "Hardware Store",
-    unique_id == "09-14 Chicago - Pilsen-2333 S Cicero Ave, Cicero, IL 60804" ~ "Hardware Store"
+    unique_id == "09-14 Chicago - Pilsen-2333 S Cicero Ave, Cicero, IL 60804" ~ "Hardware Store",
     TRUE ~ business_worksite
   ))
   
