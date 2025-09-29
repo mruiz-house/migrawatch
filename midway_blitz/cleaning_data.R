@@ -38,8 +38,9 @@ df_intermediate <- as.data.frame(lapply(data_raw, function(x) {
 # Select all dates after 9/9 
 data_filtered <- df_intermediate %>%
               filter(date_time_raid > ymd('2025-09-08')) %>%
+# Think really carefully about the subset of data you are cooking with ... 
               filter(verified_by_rrt == 'checked')  %>%
-              filter(!str_detect(type_report, 'False|FALSE|Rumors'))
+              filter(!str_detect(type_report, 'False|FALSE'))
 
 # convert to readable table
 datatable(data_filtered)
@@ -107,7 +108,7 @@ data_filtered <- data_filtered %>%
     unique_id == "09-19 Elgin-Villa and Wright St, 60120" ~ "Unmarked Cars",
     unique_id == "09-19 Chicago - Homan Square-Harrison & Kedzie, 60612" ~ "Unmarked Cars",
     unique_id == "09-18 Chicago- Humboldt Park-Central park and Division" ~ "Unmarked Cars, Multiple Agents, Face Covering, Pulling Up Cars",
-    unique_id == "09-18 Chicag0- Back of the Yards-5307 S Francisco" ~ "Staging or Circling" # Removing the pulling up cars label, doesn't seem to fit
+    unique_id == "09-18 Chicag0- Back of the Yards-5307 S Francisco" ~ "Staging or Circling", # Removing the pulling up cars label, doesn't seem to fit
     TRUE ~ tactics_reported
   ))
 
