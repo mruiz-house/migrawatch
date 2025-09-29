@@ -1,5 +1,75 @@
 ---
 title: "false_reports_analysis"
-output: html_document
+output: 
+  pdf_document: default 
+
 ---
+
+```{r} 
+# Load Libraries
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(here)
+library(lubridate)
+library(stringr)
+
+# Load Relevant Data 
+data_raw <- read_csv(file = file.path(here(), '9.29.25_data.csv'),
+                        # add appropriate column names
+                        col_names = c('location', 'date_time_reported',
+                                      'unique_id', 'date_time_raid',
+                                      'day', 'time_category', 
+                                      'raid_calls', 'notes',
+                                      'street_address', 'type_report',
+                                      'detention_centers', 'tactics_reported',
+                                      'rapid_response_team', 'people_detained',
+                                      'verified_by_rrt', 'OCAD_operator_uploaded',
+                                      'business_worksite', 'car_description', 'license_plate')) 
+
+# Select all rows, delete columns 20 and 21 (media links)
+data_raw <-  data_raw[, c(1:19,23)]
+data_raw <-  data_raw %>%
+            rename("source" = X23)
+
+# Format the date and time correctly + make certain columns strings 
+data_raw$date_time_reported <-  mdy_hm(data_raw$date_time_reported)
+data_raw$date_time_raid <-  mdy_hm(data_raw$date_time_raid)
+
+# Select all false sightings 
+data_labeled <- data_raw %>%
+  mutate(report_status = case_when(
+# This is the step that the consultant - mixing variable 
+# There is some overlap where some cases proven false were originally tagged with Rumors 
+    str_detect(type_report, regex("FALSE", ignore_case = TRUE)) ~ "Confirmed False",
+# FALSE takes precedent over Rumors, 
+    str_detect(type_report, regex("Rumors", ignore_case = TRUE)) ~ "Unconfirmed",
+    TRUE ~ "Confirmed True"
+  ))
+
+count(data_labeled %>%
+        filter(report_status == "Unconfirmed"))
+
+```
+
+I. Visualizations  - 
+
+The dashboard in Airtable may unintentionally overstate the number I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29. 
+
+There is a disclaimer that notes that calls may have multiple tags. For example, the visualization shows 970 ICE sightings -- but this count include sightings that have later been proven False ("Ice Sighting, False"). 
+
+If 
+
+
+```{r}
+# Visualization of Confirmed True, Confirmed False, and ?
+data_type <- data_labeled %>% 
+  group_by(type_report, report_status) %>%
+  count() 
+
+data_type
+
+gmail 
+
+```
 
