@@ -42,7 +42,10 @@ data_raw$date_time_raid <-  mdy_hm(data_raw$date_time_raid)
 # Change capitalization and abbreviate to avoid problems downstream
 data_raw <- data_raw %>%
   mutate(type_report = str_to_title(type_report)) %>%
-  mutate(type_report = str_replace_all(type_report, "Corporate Collaboration", "Corp Collab"))
+  mutate(type_report = str_replace_all(type_report, "Corporate Collaboration", "Corp Collab"),
+         type_report = str_replace_all(type_report, "Public Space Raid", "Pub Space Raid"),
+         type_report = str_replace_all(location, "Chicago - ", ""),
+         location = case_when(location == "" ~ "Chicago"), TRUE ~ location))
 
 
 # II. Data Transformation 
@@ -65,35 +68,46 @@ data_labeled <- data_labeled %>%
          refined_categories = str_replace_all(refined_categories, ",,", ","),
          refined_categories = str_replace_all(refined_categories, "^,|,$", ""),
           # Public Space Raid 
-         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Public Space Raid|Public Space Raid,Ice Sighting",
-                                              "Public Space Raid"),
+         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Pub Space Raid|Pub Space Raid,Ice Sighting",
+                                              "Pub Space Raid"),
          # Worksite Raid 
-         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Worksite Raid|Worksite Raid,Ice Sighting|Public Space Raid,Worksite Raid|Worksite Raid,Public Space Raid", 
+         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Worksite Raid|Worksite Raid,Ice Sighting|Pub Space Raid,Worksite Raid|Worksite Raid,Pub Space Raid", 
                                               "Worksite Raid"),
          # I-9 Audit
          refined_categories = str_replace_all(refined_categories, "Ice Sighting,I-9 Audit", "I-9 Audit"),
          # Corporate Collaboration 
          refined_categories = str_replace_all(refined_categories, "Ice Sighting,Corp Collab", "Corp Collab"),
         # Home raid
-        refined_categories = str_replace_all(refined_categories, "Ice Sighting,Home Raid|Home Raid,Ice Sighting", "Home Raid"))
+        refined_categories = str_replace_all(refined_categories, "Ice Sighting,Home Raid|Home Raid,Ice Sighting", "Home Raid"),
+        # Replace blank spaces with Replace as placeholder
+        refined_categories = case_when(is.na(refined_categories)|refined_categories == "" ~ "No tags", TRUE ~ refined_categories))
+
+# III. Manual Edits 
 
 # Clean up certain incidents manually that need additional reclassification
 data_labeled <- data_labeled %>%
-  mutate(refined_categories = case_when(
-    unique_id == "09-11 Melrose Park-River Forest on Chicago Ave." ~ "Unclass. Raid",
+  mutate(refined_categories = 
+           case_when(unique_id == "09-11 Melrose Park-River Forest on Chicago Ave." ~ "Unclass. Raid",
+                     # They specifically raided a construction site 
+                     unique_id == "09-18 Chicago - NWS - Hermosa-Springfield & North Ave." ~ "Worksite Raid",
     TRUE ~ refined_categories))
+
+# Label specific worksites 
+data_labeled <- data_labeled %>%
+  mutate(business_worksite = 
+           case_when(unique_id == "09-18 Chicago - NWS - Hermosa-Springfield & North Ave." ~ "Construction Site", TRUE ~ business_worksite))
 
 ```
 
-I. Visualizations  - 
+I. Differentiation from AirTable Data 
 
-The dashboard in AirTable counts each of the tags () and produces a simple bar chart. Since this chart does not separate between X and Y, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29. 
+The dashboard in AirTable counts each of the tags and produces a bar chart. Since this chart does considers FALSE abd Rumors a tag, instead of its a separate variable, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29. 
 
-For example, the visualization includes 970 ICE sightings -- but this count includes sightings that have later been proven False ("Ice Sighting, False"). 
+For example, the visualization includes 970 ICE sightings, but this count includes sightings that have later been proven False ("Ice Sighting, False"). If we actually break down ICE sightings by whether or not they are true, false, or unproven, we find that only 272 have been proven true, 95 are confirmed false, 441 were unable to be confirmed. 
 
 
 ```{r}
-# Visualization of Confirmed True, Confirmed False, and ?
+# Visualization of Confirmed True, Confirmed False, and Unconfirmed 
 data_type <- data_labeled %>%
   group_by(refined_categories, report_status) %>%
   count() 
@@ -110,3 +124,36 @@ ggplot(data_labeled, aes(x = refined_categories)) +
 
 ```
 
+When we look at cases where a rapid responder was able to be respond (X/1290 cases), we can see that:  
+
+```{r}
+
+```
+
+In terms of geographic distribution of false sightings, false reports across all categories are concentrated in the following neighborhoods. 
+
+```{r}
+data_location <- data_labeled %>%
+  group_by(location, report_status) %>%
+  count()
+
+
+%>%
+  mutate(refined_categories - )
+  count() %>%
+  arrange(desc(n)) 
+  
+
+data_location
+```
+
+III. Interpretation and Recommendations 
+1. ICE Sightings are by far the common type of the. Thus far, the network has recorded X confirmed ICE Sightings, X Public Space Raids, Y Home Raids, and Z I-9 raids. 
+
+Note that the majority of Public Space Raids have been concentrated around X (). 
+
+2. In cases where a responder was dispatched (verified by RRT) to an Ice Sighting, the responder was only able to verified as X% as true and Y% as false. The majority of cases (X%) were unable to classified by a responder. 
+
+When pressed for capacity, would highly recommend responders *triage alleged raids over ICE sightings.* 
+
+3. In terms of calls received by the FSN, the neighbors X, Y, and Z experienced disproportionately high rates of false calls. Would recommend heavy canvassing in these areas, and in particular, would recommend offering X. 
