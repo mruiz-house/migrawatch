@@ -6,6 +6,8 @@ output:
 ---
 
 ```{r} 
+
+# I. Data Cleaning 
 # Load Libraries
 library(tidyverse)
 library(ggplot2)
@@ -13,7 +15,7 @@ library(knitr)
 library(here)
 library(lubridate)
 library(stringr)
-library(tinytex)
+library(DT)
 
 # Load Relevant Data 
 data_raw <- read_csv(file = file.path(here(), '9.29.25_data.csv'),
@@ -37,9 +39,13 @@ data_raw <-  data_raw %>%
 data_raw$date_time_reported <-  mdy_hm(data_raw$date_time_reported)
 data_raw$date_time_raid <-  mdy_hm(data_raw$date_time_raid)
 
-# Change capitalization to avoid problems down the line 
+# Change capitalization and abbreviate to avoid problems downstream
 data_raw <- data_raw %>%
-  mutate(type_report = str_to_title(type_report))
+  mutate(type_report = str_to_title(type_report)) %>%
+  mutate(type_report = str_replace_all(type_report, "Corporate Collaboration", "Corp Collab"))
+
+
+# II. Data Transformation 
 
 # Select all false sightings 
 data_labeled <- data_raw %>%
@@ -67,9 +73,15 @@ data_labeled <- data_labeled %>%
          # I-9 Audit
          refined_categories = str_replace_all(refined_categories, "Ice Sighting,I-9 Audit", "I-9 Audit"),
          # Corporate Collaboration 
-         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Corporate Collaboration", "Corporate Collaboration"),
+         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Corp Collab", "Corp Collab"),
         # Home raid
         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Home Raid|Home Raid,Ice Sighting", "Home Raid"))
+
+# Clean up certain incidents manually that need additional reclassification
+data_labeled <- data_labeled %>%
+  mutate(refined_categories = case_when(
+    unique_id == "09-11 Melrose Park-River Forest on Chicago Ave." ~ "Unclass. Raid",
+    TRUE ~ refined_categories))
 
 ```
 
@@ -89,7 +101,7 @@ data_type <- data_labeled %>%
 data_type
 
 # Bar Chart of variables  
-data_visualization <- ggplot(data_labeled, aes(x = refined_categories)) +
+ggplot(data_labeled, aes(x = refined_categories)) +
    geom_bar(aes(fill = report_status )) + 
    labs(title="Histogram Classifying Types of Incidents", 
        subtitle="Includes data from X to 9.25.25") +
