@@ -13,6 +13,7 @@ library(knitr)
 library(here)
 library(lubridate)
 library(stringr)
+library(tinytex)
 
 # Load Relevant Data 
 data_raw <- read_csv(file = file.path(here(), '9.29.25_data.csv'),
@@ -88,10 +89,11 @@ data_type <- data_labeled %>%
 data_type
 
 # Bar Chart of variables  
-ggplot(data_labeled, aes(x = refined_categories)) +
+data_visualization <- ggplot(data_labeled, aes(x = refined_categories)) +
    geom_bar(aes(fill = report_status )) + 
-  labs(title="Histogram Classifying Types of Incidents", 
-       subtitle="Includes data from X to 9.25.25") 
+   labs(title="Histogram Classifying Types of Incidents", 
+       subtitle="Includes data from X to 9.25.25") +
+  theme(axis.text = element_text(size = 7)) 
 
 
 ```
