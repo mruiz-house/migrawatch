@@ -30,46 +30,69 @@ data_raw <- read_csv(file = file.path(here(), '9.29.25_data.csv'),
 # Select all rows, delete columns 20 and 21 (media links)
 data_raw <-  data_raw[, c(1:19,23)]
 data_raw <-  data_raw %>%
-            rename("source" = X23)
+            rename("source" = X23) 
 
 # Format the date and time correctly + make certain columns strings 
 data_raw$date_time_reported <-  mdy_hm(data_raw$date_time_reported)
 data_raw$date_time_raid <-  mdy_hm(data_raw$date_time_raid)
 
+# Change capitalization to avoid problems down the line 
+data_raw <- data_raw %>%
+  mutate(type_report = str_to_title(type_report))
+
 # Select all false sightings 
 data_labeled <- data_raw %>%
   mutate(report_status = case_when(
-# This is the step that the consultant - mixing variable 
-# There is some overlap where some cases proven false were originally tagged with Rumors 
-    str_detect(type_report, regex("FALSE", ignore_case = TRUE)) ~ "Confirmed False",
-# FALSE takes precedent over Rumors, 
-    str_detect(type_report, regex("Rumors", ignore_case = TRUE)) ~ "Unconfirmed",
-    TRUE ~ "Confirmed True"
-  ))
+    # This is the step where the consultant was mixing variables.
+    # There is some overlap: some cases proven false were originally tagged as Rumors.
+    str_detect(type_report, "False") ~ "Confirmed False",
+    # 'False' takes precedence over 'Rumors'.
+    str_detect(type_report, "Rumors") ~ "Unconfirmed",
+    # Default: treat everything else as Confirmed True.
+    TRUE ~ "Confirmed True")) 
 
-count(data_labeled %>%
-        filter(report_status == "Unconfirmed"))
+
+# Clean up the labels in the refine_categories to get types of Raids 
+data_labeled <- data_labeled %>%
+  mutate(refined_categories = str_replace_all(type_report, "False|Rumors", ""),
+         refined_categories = str_replace_all(refined_categories, ",,", ","),
+         refined_categories = str_replace_all(refined_categories, "^,|,$", ""),
+          # Public Space Raid 
+         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Public Space Raid|Public Space Raid,Ice Sighting",
+                                              "Public Space Raid"),
+         # Worksite Raid 
+         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Worksite Raid|Worksite Raid,Ice Sighting|Public Space Raid,Worksite Raid|Worksite Raid,Public Space Raid", 
+                                              "Worksite Raid"),
+         # I-9 Audit
+         refined_categories = str_replace_all(refined_categories, "Ice Sighting,I-9 Audit", "I-9 Audit"),
+         # Corporate Collaboration 
+         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Corporate Collaboration", "Corporate Collaboration"),
+        # Home raid
+        refined_categories = str_replace_all(refined_categories, "Ice Sighting,Home Raid|Home Raid,Ice Sighting", "Home Raid"))
 
 ```
 
 I. Visualizations  - 
 
-The dashboard in Airtable may unintentionally overstate the number I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29. 
+The dashboard in AirTable counts each of the tags () and produces a simple bar chart. Since this chart does not separate between X and Y, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29. 
 
-There is a disclaimer that notes that calls may have multiple tags. For example, the visualization shows 970 ICE sightings -- but this count include sightings that have later been proven False ("Ice Sighting, False"). 
-
-If 
+For example, the visualization includes 970 ICE sightings -- but this count includes sightings that have later been proven False ("Ice Sighting, False"). 
 
 
 ```{r}
 # Visualization of Confirmed True, Confirmed False, and ?
-data_type <- data_labeled %>% 
-  group_by(type_report, report_status) %>%
+data_type <- data_labeled %>%
+  group_by(refined_categories, report_status) %>%
   count() 
 
 data_type
 
-gmail 
+# Bar Chart of variables  
+ggplot(data_labeled, aes(x = refined_categories)) +
+   geom_bar(aes(fill = report_status )) + 
+  labs(title="Histogram Classifying Types of Incidents", 
+       subtitle="Includes data from X to 9.25.25") 
+
 
 ```
 
