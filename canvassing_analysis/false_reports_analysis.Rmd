@@ -16,6 +16,7 @@ library(here)
 library(lubridate)
 library(stringr)
 library(DT)
+library(sf)
 
 # Load Relevant Data 
 data_raw <- read_csv(file = file.path(here(), '9.29.25_data.csv'),
@@ -44,8 +45,8 @@ data_raw <- data_raw %>%
   mutate(type_report = str_to_title(type_report)) %>%
   mutate(type_report = str_replace_all(type_report, "Corporate Collaboration", "Corp Collab"),
          type_report = str_replace_all(type_report, "Public Space Raid", "Pub Space Raid"),
-         type_report = str_replace_all(location, "Chicago - ", ""),
-         location = case_when(location == "" ~ "Chicago"), TRUE ~ location))
+         location = str_replace_all(location, "Chicago - |Chicago- ", ""),
+         location = case_when(location == "" ~ "Chicago", TRUE ~ location))
 
 
 # II. Data Transformation 
@@ -101,7 +102,7 @@ data_labeled <- data_labeled %>%
 
 I. Differentiation from AirTable Data 
 
-The dashboard in AirTable counts each of the tags and produces a bar chart. Since this chart does considers FALSE abd Rumors a tag, instead of its a separate variable, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29. 
+The dashboard in AirTable counts each of the tags and produces a bar chart. Since this chart does considers FALSE and Rumors a classification tag, instead of its a separate variable, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29. 
 
 For example, the visualization includes 970 ICE sightings, but this count includes sightings that have later been proven False ("Ice Sighting, False"). If we actually break down ICE sightings by whether or not they are true, false, or unproven, we find that only 272 have been proven true, 95 are confirmed false, 441 were unable to be confirmed. 
 
@@ -110,7 +111,8 @@ For example, the visualization includes 970 ICE sightings, but this count includ
 # Visualization of Confirmed True, Confirmed False, and Unconfirmed 
 data_type <- data_labeled %>%
   group_by(refined_categories, report_status) %>%
-  count() 
+  count() %>%
+  kable(caption = "Type of Incident by Report Validity")
 
 data_type
 
@@ -124,36 +126,63 @@ ggplot(data_labeled, aes(x = refined_categories)) +
 
 ```
 
-When we look at cases where a rapid responder was able to be respond (X/1290 cases), we can see that:  
+
+
+II. Analysis of Activities Verified by RRT 
+
+When we analyze incidents where a rapid responder was able to respond (619/1290 cases), we can see that the overall distribution looks similar to the greater dataset, that includes incidents that have not been passed onto the RRT. Some notable exceptions exist.
+
+While False Ice Sightings comprise X% of totaly Ice Sighting (likely due to a disparate source of data), rapid responders are are 22.3% likely to encounter a false sighting. Nearly half of all sightings (49.4%) were proven false or were unable to be verified by a RRT. 
 
 ```{r}
+
+# Visualization of Confirmed True, Confirmed False, and Unconfirmed 
+data_type_2 <- data_labeled %>%
+  filter(verified_by_rrt == "checked") %>%
+  group_by(refined_categories, report_status) %>%
+  count() 
+
+# Visualization of activities verified by Rapid Responders
+data_labeled %>%
+  filter(verified_by_rrt == "checked") %>%
+ggplot(aes(x = refined_categories)) +
+   geom_bar(aes(fill = report_status)) + 
+   labs(title="Histogram Classifying Types of Incidents", 
+       subtitle="Includes data from X to 9.25.25") +
+  theme(axis.text = element_text(size = 7)) 
+
+
+data_labeled %>% 
+  filter(verified_by_rrt == "checked") %>%
+  group_by(refined_categories, report_status) %>%
+  count()
 
 ```
+II. Geographic Distribution of False Reports ()
 
-In terms of geographic distribution of false sightings, false reports across all categories are concentrated in the following neighborhoods. 
+In terms of geographic distribution of False Reports, false reports across all categories are concentrated in the following neighborhoods. 
 
 ```{r}
-data_location <- data_labeled %>%
+# Set GeoJSON file path and read GeoJSON 
+geojson_file <- "chicago_community_boundaries.json"
+chicago_communities <- st_read(geojson_file)
+
+# 
+
+location_data <- data_labeled %>%
   group_by(location, report_status) %>%
   count()
 
-
-%>%
-  mutate(refined_categories - )
-  count() %>%
-  arrange(desc(n)) 
-  
-
-data_location
+location_data
 ```
 
 III. Interpretation and Recommendations 
-1. ICE Sightings are by far the common type of the. Thus far, the network has recorded X confirmed ICE Sightings, X Public Space Raids, Y Home Raids, and Z I-9 raids. 
+1. ICE Sightings are by far the common type of the incident. Thus far, the network has recorded X confirmed ICE Sightings, X Public Space Raids, Y Home Raids, and Z I-9 raids. 
 
 Note that the majority of Public Space Raids have been concentrated around X (). 
 
-2. In cases where a responder was dispatched (verified by RRT) to an Ice Sighting, the responder was only able to verified as X% as true and Y% as false. The majority of cases (X%) were unable to classified by a responder. 
+2. When pressed for capacity, would highly recommend the FSN *triage alleged raids over ICE sightings.* Half the time, ICE sightings are unable to be verified or are proven outright false. Having talked to rapid responders on the ground, it is clear that groups are facing this 
 
-When pressed for capacity, would highly recommend responders *triage alleged raids over ICE sightings.* 
+This may be a conversation for leadership to consider. Is every sighting worth validating, especially when there is limited information? My suggestion would be no -- and instead to implement a triage system under times of high calls. 
 
 3. In terms of calls received by the FSN, the neighbors X, Y, and Z experienced disproportionately high rates of false calls. Would recommend heavy canvassing in these areas, and in particular, would recommend offering X. 
