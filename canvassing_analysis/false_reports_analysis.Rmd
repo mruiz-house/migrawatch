@@ -130,9 +130,9 @@ ggplot(data_labeled, aes(x = refined_categories)) +
 
 II. Analysis of Activities Verified by RRT 
 
-When we analyze incidents where a rapid responder was able to respond (619/1290 cases), we can see that the overall distribution looks similar to the greater dataset, that includes incidents that have not been passed onto the RRT. Some notable exceptions exist.
+When we analyze incidents where a rapid responder was dispatched (619/1290 cases), we can see that the overall distribution looks similar to the broader data set. 
 
-While False Ice Sightings comprise X% of totaly Ice Sighting (likely due to a disparate source of data), rapid responders are are 22.3% likely to encounter a false sighting. Nearly half of all sightings (49.4%) were proven false or were unable to be verified by a RRT. 
+Some notable exceptions exist. For example, false incidents comprise *12.5%* of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false *22.3%* of the time. This discrepancy likely occurs because the broader data set includes referrals from the MIDAS network and relevant social media posts -- driving the number of proven sightings up. 
 
 ```{r}
 
@@ -148,7 +148,7 @@ data_labeled %>%
 ggplot(aes(x = refined_categories)) +
    geom_bar(aes(fill = report_status)) + 
    labs(title="Histogram Classifying Types of Incidents", 
-       subtitle="Includes data from X to 9.25.25") +
+       subtitle="Includes data from 2.1.25 to 9.25.25") +
   theme(axis.text = element_text(size = 7)) 
 
 
@@ -163,26 +163,93 @@ II. Geographic Distribution of False Reports ()
 In terms of geographic distribution of False Reports, false reports across all categories are concentrated in the following neighborhoods. 
 
 ```{r}
-# Set GeoJSON file path and read GeoJSON 
+
+# I. Read GeoJSON file containing Chicago neighborhoods ...........................................
 geojson_file <- "chicago_community_boundaries.json"
-chicago_communities <- st_read(geojson_file)
+chicago_communities <- st_read(geojson_file) %>%
+mutate(shape_area = as.numeric(shape_area),
+       shape_len = as.numeric(shape_len))
 
-# 
+# II. Read Evanston GeoJSON file............................................................
+evanston_boundaries <- st_read("https://maps.cityofevanston.org/arcgis/rest/services/OpenData/ArcGISOpenData/MapServer/0/query?where=1=1&outFields=*&f=geojson") %>%
+   mutate(community = "EVANSTON")
+colnames(evanston_boundaries)[2] <- "shape_area"
+colnames(evanston_boundaries)[3] <- "shape_len"
 
-location_data <- data_labeled %>%
-  group_by(location, report_status) %>%
-  count()
+# III. Read Cicero and Bewryn GeoJSON file ......................................................
+cicero_berwyn_boundaries <- st_read("https://geoservices.epa.illinois.gov/arcgis/rest/services/Political/IllinoisPoliticalBoundaries/MapServer/2/query?where=DIST_NAME+IN+('Cicero','Berwyn')&outFields=*&f=geojson") %>%
+  rename("community" = "DIST_NAME")
 
-location_data
+colnames(cicero_berwyn_boundaries)[11] <- "shape_area"
+colnames(cicero_berwyn_boundaries)[12] <- "shape_len"
+
+
+# IV. Combine GeoSON file ...........................................................
+
+# Ensure that our coordinate systems match 
+evanston_boundaries <- st_transform(evanston_boundaries, st_crs(chicago_communities))
+cicero_berwyn_boundaries <- st_transform(cicero_berwyn_boundaries, st_crs(chicago_communities))
+
+# Bind our data together 
+combined_sf_data <- bind_rows(chicago_communities, evanston_boundaries, cicero_berwyn_boundaries)
+
+# V. Preprocessing to bind counts with JSON data ......................................................
+location_counts <- data_labeled %>%
+  mutate(community = str_to_upper(location),
+         community = case_when(
+                    str_detect(community, "PILSEN") ~ "LOWER WEST SIDE",
+                    str_detect(community, "LITTLE VILLAGE") ~ "SOUTH LAWNDALE",
+                    str_detect(community, "BACK OF THE YARDS|BOTY") ~ "NEW CITY",
+                    str_detect(community, "DOWNTOWN|THE LOOP") ~ "LOOP",
+                    str_detect(community, "SOUTH LOOP") ~ "NEAR SOUTH SIDE",
+                    str_detect(community, "CHICAGO-PORTAGE PARK") ~ "PORTAGE PARK",
+                    str_detect(community, "CHICAGO UPTOWN") ~ "UPTOWN",
+                    str_detect(community, "CHICAGO ALBANY PARK") ~ "ALBANY PARK",
+                    str_detect(community, "HUMBOLT PARK") ~ "HUMBOLDT PARK",
+                    str_detect(community, "WEST LOOP|WICKER PARK|FULTON MARKET DISTRICT") ~ "NEAR WEST SIDE",
+                    str_detect(community, "WEST 54TH AND PULASKI") ~ "WEST ELSDON",
+                    str_detect(community, "BUCKTOWN") ~ "WEST TOWN",
+                    str_detect(community, "MIDWAY") ~ "GARFIELD RIDGE",
+                    str_detect(community, "CHINATOWN") ~ "ARMOUR SQUARE",
+                    str_detect(community, "BELMONT/CAGRIN") ~ "BELMONT CRAGIN",
+                    str_detect(community, "CALUMET PARK") ~ "WEST PULLMAN",
+                    str_detect(community, "BLUE ISLAND") ~ "MORGAN PARK",
+                    str_detect(community, "NORTH PULASKI|IRVING PARK") ~ "IRVING PARK",
+                    str_detect(community, "ROSCOE VILLAGE") ~ "NORTH CENTER",
+                    str_detect(community, "LAKEVIEW") ~ "LAKE VIEW",
+                    str_detect(community, "BERWYN CICERO") ~ "BERWYN",
+                    TRUE ~ community
+                    )) %>%
+group_by(community, report_status) %>%
+count()
+
+# join the counts with evanston data
+map_df <- left_join(combined_sf_data, location_counts, by = "community")
+
+# VI. Map my data ...................................................................
+ggplot(map_df) +
+  geom_sf(aes(fill = n), color = "black", size = 0.2) +
+scale_fill_gradient(
+  low = "green", high = "red", name = "Number of False Reports") +
+  labs(title = "False Reports by Chicago Neighborhood") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
 ```
 
 III. Interpretation and Recommendations 
-1. ICE Sightings are by far the common type of the incident. Thus far, the network has recorded X confirmed ICE Sightings, X Public Space Raids, Y Home Raids, and Z I-9 raids. 
+1. ICE Sightings are by far the common type of the incident. Thus far, the network has recorded 272 confirmed ICE Sightings, X Public Space Raids, Y Home Raids, and Z I-9 raids. 
 
 Note that the majority of Public Space Raids have been concentrated around X (). 
 
-2. When pressed for capacity, would highly recommend the FSN *triage alleged raids over ICE sightings.* Half the time, ICE sightings are unable to be verified or are proven outright false. Having talked to rapid responders on the ground, it is clear that groups are facing this 
+2. Nearly half of all sightings (49.4%) were proven false or were unable to be verified by a RRT. When pressed for capacity, would highly recommend the FSN *triage alleged raids over ICE sightings.*  Having talked to rapid responders on the ground, it is clear that groups are facing significant strain on volunteer capacity. 
 
-This may be a conversation for leadership to consider. Is every sighting worth validating, especially when there is limited information? My suggestion would be no -- and instead to implement a triage system under times of high calls. 
+Would struggle consider leadership consider the following: Is every sighting worth validating? Is there a threshold that needs to be met for passing along a sighting? By developing a better protocol for identifying ICE sightings, OCAD and ICIRR can potentially alleviate responder burnout and deploy responders more strategically. 
 
-3. In terms of calls received by the FSN, the neighbors X, Y, and Z experienced disproportionately high rates of false calls. Would recommend heavy canvassing in these areas, and in particular, would recommend offering X. 
+3. In terms of false reports, these were concentrated in Little Village, Evanston, the Loop, and Uptown. There are two takeaways I'd like to stress:
+
+1. Most worried about KYR education in Little Village and Uptown, since both areas have significant populations. Would recommend some community KYR trainings in these areas + canvassing.  
+2.  High numbers of false reports are, in some ways, a good thing. That means people have utilized the ICIRR hotline and understand it's a resource. I am particularly worried about areas in the Southside that have no false sightings. Would recommend that the Far South and Southside teams coordinate some community canvassses to raise awareness of the FSN line. 
+
+
+
