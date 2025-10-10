@@ -117,7 +117,7 @@ data_labeled %>%
   # change the order of categories 
   select(refined_categories, `Unconfirmed`, `Confirmed False`, `Confirmed True`) %>%
   # add percentage column for Confirmed True 
-  mutate(percentage_confirmed_true = (`Confirmed False`/(`Confirmed True` + `Confirmed False` + `Unconfirmed`)*100)) %>%
+  mutate(percentage_confirmed_false = (`Confirmed False`/(`Confirmed True` + `Confirmed False` + `Unconfirmed`)*100)) %>%
   kable(caption = "Type of Incident by Report Validity (All Reports)")
 
 
@@ -162,13 +162,13 @@ data_labeled %>%
 # Change the order of categories
   select(refined_categories, `Unconfirmed`, `Confirmed False`, `Confirmed True`) %>%
 # Add in a column for percentage
-  mutate(percentage_confirmed_true = (`Confirmed False`/(`Confirmed True` + `Confirmed False` + `Unconfirmed`)*100)) %>%
+  mutate(percentage_confirmed_false = (`Confirmed False`/(`Confirmed True` + `Confirmed False` + `Unconfirmed`)*100)) %>%
   kable(caption = "Type of Incident by Report Validity (Only Reports Verified by Rapid Responders)")
 
 
 ```
 
-Some notable exceptions exist. For example, false incidents comprise **12.5%** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **22.3%** of the time. 
+Some notable exceptions exist. For example, false incidents comprise **11.75** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **22.3%** of the time. 
 
 A two-proportion z-test indicates that ICE Sightings verified by rapid responders were  significantly more likely to be disproven (22.3%) than those reported overall (11.8%, p < 0.001).
 
@@ -262,7 +262,7 @@ location_data <- data_labeled %>%
                    
 ```
 
-Reports -- regardless of their validity -- are concentrated along the southwest side. 
+Reports -- regardless of their validity -- are concentrated along the southwest side:
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 all_reports_count <- location_data %>% 
@@ -276,7 +276,7 @@ map_df <- left_join(combined_sf_data, all_reports_count, by = "community")
 ggplot(map_df) +
   geom_sf(aes(fill = n), color = "black", size = 0.2) +
 scale_fill_gradient2(
-  low = "blue", high = "red", midpoint = 2, name = "Number of Reports") +
+  low = "green", high = "red", midpoint = 2, name = "Number of Reports") +
   labs(title = "Reports by Chicago Neighborhood") +
   theme_minimal() +
   theme(legend.position = "right")
