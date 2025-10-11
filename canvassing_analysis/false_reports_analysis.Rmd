@@ -185,7 +185,6 @@ prop.test(false_counts, total_counts, alternative = "less", correct = FALSE)
 
 **III. Geographic Distribution of Reports**
 
-The majority of reports are clustered along the southwest side:
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 # Preparing the GeoJSON
@@ -218,13 +217,13 @@ cicero_berwyn_boundaries <- st_transform(cicero_berwyn_boundaries, st_crs(chicag
 # Bind our data together 
 combined_sf_data <- bind_rows(chicago_communities, evanston_boundaries, cicero_berwyn_boundaries)
 
-# Label neighborhoods to correspond with Chicago community areas 
+# Label neighborhoods to correspond with Chicago community areas penis54444
 location_data <- data_labeled %>%
   mutate(community = str_to_upper(location),
          community = str_replace_all(community, "SWS -|SWS / ", ""),
          community = case_when(
-                    str_detect(community, "PILSEN") ~ "LOWER WEST SIDE",
-                    str_detect(community, "LITTLE VILLAGE") ~ "SOUTH LAWNDALE",
+                    str_detect(community, "PILSEN|LOWER WEST SIDE/HEART OF CHICAGO") ~ "LOWER WEST SIDE",
+                    str_detect(community, "LITTLE VILLAGE|LA VILLITA|MARSHALL SQUARE/HEART OF CHICAGO	") ~ "SOUTH LAWNDALE",
                     str_detect(community, "BACK OF THE YARDS|BOTY") ~ "NEW CITY",
                     str_detect(community, "DOWNTOWN|THE LOOP") ~ "LOOP",
                     str_detect(community, "SOUTH LOOP") ~ "NEAR SOUTH SIDE",
@@ -240,10 +239,14 @@ location_data <- data_labeled %>%
                     str_detect(community, "BELMONT/CAGRIN") ~ "BELMONT CRAGIN",
                     str_detect(community, "CALUMET PARK") ~ "WEST PULLMAN",
                     str_detect(community, "BLUE ISLAND") ~ "MORGAN PARK",
-                    str_detect(community, "NORTH PULASKI|IRVING PARK") ~ "IRVING PARK",
+                    str_detect(community, "NORTH PULASKI|IRVING PARK|IRVING PARLK") ~ "IRVING PARK",
                     str_detect(community, "ROSCOE VILLAGE") ~ "NORTH CENTER",
                     str_detect(community, "LAKEVIEW") ~ "LAKE VIEW",
                     str_detect(community, "BERWYN CICERO") ~ "BERWYN",
+                    str_detect(community, "BRIGTON PARK") ~ "BRIGHTON PARK", 
+                    str_detect(community, "ILLINOIS MEDICAL DISTRICT") ~ "NEAR WEST SIDE", 
+                    str_detect(community, "ROGER’S PARK") ~ "ROGERS PARK",
+                    str_detect(community, "GOLD COAST|NAVY PIER") ~ "NEAR NORTH SIDE",
                     # relabel southwest data 
                     unique_id == "09-25 Hermosa/Humboldt Park-4770 W Grand Ave, Chicago, IL 60639" ~ "HERMOSA", 
                     unique_id == "02-24 Chicago - SWS-South Shields and West 43rd PL." ~ "FULLER PARK",
@@ -260,12 +263,27 @@ location_data <- data_labeled %>%
                    
 ```
 
-Airtable data would suggest that the reports are concentrated along the NWS.Reports -- regardless of their validity -- are concentrated along the southwest side. 
+Airtable data would suggest that the reports are concentrated along the Northwest Side, followed by the Southwest side. However, this assessment is a very broad one and aggregates data from multiple neighborhood teams. 
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, out.width= "50%"}
+include_graphics("chi_nws.png")
+```
+```{r, message = FALSE, warning = FALSE, echo = FALSE, out.width= "50%"}
+include_graphics("chi_sws.png")
+```
+
+
+When we actually look neighborhood by neighborhood, reports are actually concentrated along the west side, followed by the southwest side. 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 all_reports_count <- location_data %>% 
 group_by(community, report_status) %>%
 count() 
+
+# produce table visual
+all_reports_count %>%
+  pivot_wider(names_from = report_status, values_from = n) %>%
+  kable()
 
 # join the counts with evanston data
 map_df <- left_join(combined_sf_data, all_reports_count, by = "community")
@@ -274,10 +292,11 @@ map_df <- left_join(combined_sf_data, all_reports_count, by = "community")
 ggplot(map_df) +
   geom_sf(aes(fill = n), color = "black", size = 0.2) +
 scale_fill_gradient2(
-  low = "green", high = "red", midpoint = 2, name = "Number of Reports") +
+  low = "green", high = "red", name = "Number of Reports") +
   labs(title = "Figure 1: Reports by Chicago Neighborhood (All)") +
   theme_minimal() +
   theme(legend.position = "right")
+
 ```
 
 Confirmed reports are clustered in the following neighborhoods:
