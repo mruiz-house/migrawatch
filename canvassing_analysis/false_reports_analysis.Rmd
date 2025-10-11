@@ -168,13 +168,11 @@ data_labeled %>%
 
 ```
 
-Some notable exceptions exist. For example, false incidents comprise **11.75** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **22.3%** of the time. 
+Some notable exceptions exist. For example, false incidents comprise **11.75** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **22.3%** of the time (*note that a two proportion z-test confirms this gap is significant, p <.001).
 
-A two-proportion z-test indicates that ICE Sightings verified by rapid responders were  significantly more likely to be disproven (22.3%) than those reported overall (11.8%, p < 0.001).
+This gap likely occurs because the Airtable database contains additional confirmed incidents that do not come from the FSN. 
 
-This suggests that the AirTable dashboard may understate the frequency of false reports, and that the ‘true’ accuracy of ICE Sightings is likely closer to this 22% false-report threshold.
-
-```{r}
+``` {r, message = FALSE, warning = FALSE, echo = FALSE}
 # Set up for our statistics test 
 false_counts <- c(95, 73)
 total_counts <- c(808, 328)
@@ -262,7 +260,7 @@ location_data <- data_labeled %>%
                    
 ```
 
-Reports -- regardless of their validity -- are concentrated along the southwest side:
+Airtable data would suggest that the reports are concentrated along the NWS.Reports -- regardless of their validity -- are concentrated along the southwest side. 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 all_reports_count <- location_data %>% 
@@ -277,7 +275,7 @@ ggplot(map_df) +
   geom_sf(aes(fill = n), color = "black", size = 0.2) +
 scale_fill_gradient2(
   low = "green", high = "red", midpoint = 2, name = "Number of Reports") +
-  labs(title = "Reports by Chicago Neighborhood") +
+  labs(title = "Figure 1: Reports by Chicago Neighborhood (All)") +
   theme_minimal() +
   theme(legend.position = "right")
 ```
@@ -299,7 +297,7 @@ ggplot(map_df) +
   geom_sf(aes(fill = n), color = "black", size = 0.2) +
 scale_fill_gradient(
   low = "green", high = "red", name = "Number of Confirmed Reports") +
-  labs(title = "Confirmed Reports by Chicago Neighborhood") +
+  labs(title = "Figure 2: Confirmed Reports by Chicago Neighborhood") +
   theme_minimal() +
   theme(legend.position = "right")
 ```
@@ -323,7 +321,7 @@ ggplot(map_df) +
   geom_sf(aes(fill = n), color = "black", size = 0.2) +
 scale_fill_gradient(
   low = "green", high = "red", name = "Number of False Reports") +
-  labs(title = "False Reports by Chicago Neighborhood") +
+  labs(title = "Figure 3: False Reports by Chicago Neighborhood") +
   theme_minimal() +
   theme(legend.position = "right")
 
@@ -433,10 +431,12 @@ scale_fill_gradient(
 
     Would also ask leadership to consider the following question: Is every sighting worth validating, especially in times when we are hurting for volunteer capacity? Is there a threshold that needs to be met for passing along a sighting?
 
-3.  In terms of the geographic distribution of reports, have a couple of takeaways I'd like to stress: A. High numbers of false reports are, in some ways, a good thing. That means people have utilized the ICIRR hotline and understand it's a resource (likely what we are seeing in Evanston, downtown, Little Village, and Uptown). In this case, it is safe to say that they are aware of the hotline's existence -- they just likely need more KYR training.
+3.  In terms of the geographic distribution of reports, have a couple of takeaways I'd like to stress: A. High numbers of false reports are, in some ways, a good think.  That means people have utilized the ICIRR hotline and understand it's a resource (likely what we are seeing in Evanston, Downtown, Little Village, and Uptown).
 
-    Would recommend the Little Village team, in particular, do more KYR trainings since this neighborhood has been hit particularly heavily and also has a high quantity of false reports.
+    Would recommend the Little Village team, in particular, do more KYR trainings since this neighborhood has been hit particularly heavily (see figure 1) and also has a high quantity of false reports (see figure 2)
 
-4.  Lack of data on reports can be equally important to understanding a community. If we look at the South Side, we can see that there are a low quantity of reports to begin with -- and almost no false sightings. 
+4.  Lack of data on reports can be equally important to understanding a community. If we look at the South Side, we can see that there are a low quantity of reports to begin with (figure 1), even in areas with high numbers of immigrants where we could expect escalated ICE presence (figure 3). 
 
-Would recommend the Far South Team focus on distributing literature first to raise awareness for the FSN, then move into more capacity intensive KYR workshops. 
+The October 3rd raid in South Shore, tellingly, only appears in the database because it was confirmed through media coverage. No record of a report to the FSN hotline exists.  
+
+The lack of reports, therefore, is is not an indication that these areas are facing less ICE presence. Would strongly recommend additional attention is paid to the South Side to help develop infrastructure. 
