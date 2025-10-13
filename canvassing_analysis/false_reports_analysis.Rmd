@@ -5,6 +5,8 @@ output:
   pdf_document: default
 ---
 
+GLM with Poisson function for rare outcomes
+If your hispanic proption 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
 # I. Data Cleaning 
@@ -20,7 +22,7 @@ library(sf)
 library(spdep)
 
 # Load Relevant Data 
-data_raw <- read_csv(file = file.path(here(), '9.29.25_data.csv'),
+data_raw <- read_csv(file = file.path(here(), '10-13-25.csv'),
                         # add appropriate column names
                         col_names = c('location', 'date_time_reported',
                                       'unique_id', 'date_time_raid',
@@ -100,6 +102,8 @@ data_labeled <- data_labeled %>%
            case_when(unique_id == "09-18 Chicago - NWS - Hermosa-Springfield & North Ave." ~ "Construction Site", TRUE ~ business_worksite))
 
 ```
+
+# dictotimize the areas 
 
 **I. Differentiation from AirTable Data**
 
@@ -328,7 +332,19 @@ False reports are clustered in the following neighborhoods:
 false_reports_count <- location_data %>% 
 group_by(community, report_status) %>%
 filter(report_status == "Confirmed False") %>%
-count()
+count() # %>%
+# Need to calculate the variance 
+# If the mean is similar or difference -> figure out which model to use 
+# How each variable you put into the model contributes to an additional False Report 
+# mutate(calculated_variance = (n - 2.84(n))^2)
+
+# Going to need to merge another dataset
+# Based on my model, X hispanics correspond with Y 
+# We could create a hypotehtical neighborhood ... if it's X percent hispanic, 
+# We can figure out general model that allows us to the predict this 
+# General Characteristics of a neighborhood 
+# Could you find how much false reports in hypothetical country occur per 5% increase in hispanic population ... # Where are they distributed? What is causing false reports? What is correlated with grey areas? 
+  
 
 # join the counts with evanston data
 map_df <- left_join(combined_sf_data, false_reports_count, by = "community")
@@ -420,13 +436,10 @@ count() %>%
 # join the counts with evanston data
 map_df <- left_join(combined_sf_data, false_reports_count, by = "community")
 
-# V ..................... Stablize the incidents to avoid areas w/ small immigration pop being disproportionately represented  
-
-
-# nb <- poly2nb(map_data)
-#eb <- EBlocal(map_data$false_reports, map_data$foreign_pop, nb = nb, zero.policy = TRUE)
-
-# map_data$rate_smoothed <- eb[, "eb"] * 10000
+# V ..................... For False Report 
+# Use a GLM -> What GLM should I use? 
+# What are the characteristics associated with neighborhoods with no false sightings? Use a logistic regression
+# Outcome variable is dichotimized into country that has a false report or not / 0 or 1 
 
 # VI. Map my data ...................................................................
 ggplot(map_df) +
