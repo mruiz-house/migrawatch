@@ -3,3 +3,106 @@ title: "canvassing_analysis"
 output: html_document
 ---
 
+GLM with Poisson function for rare outcomes
+If your hispanic proption
+# dictotimize the areas 
+
+3.  In terms of the geographic distribution of reports, have a couple of takeaways I'd like to stress: A. High numbers of false reports are, in some ways, a good think.  That means people have utilized the ICIRR hotline and understand it's a resource (likely what we are seeing in Evanston, Downtown, Little Village, and Uptown).
+
+    Would recommend the Little Village team, in particular, do more KYR trainings since this neighborhood has been hit particularly heavily (see figure 1) and also has a high quantity of false reports (see figure 2)
+
+4.  Lack of data on reports can be equally important to understanding a community. If we look at the South Side, we can see that there are a low quantity of reports to begin with (figure 1), even in areas with high numbers of immigrants where we could expect escalated ICE presence (figure 3). 
+
+The October 3rd raid in South Shore, tellingly, only appears in the database because it was confirmed through media coverage. No record of a report to the FSN hotline exists.  
+
+The lack of reports, therefore, is is not an indication that these areas are facing less ICE presence. Would strongly recommend additional attention is paid to the South Side to help develop infrastructure. 
+
+When determining the neighborhoods to target for canvassing and KYR trainings, looking at the number of false ICE sightings is important, but also, should be considered in context. We can compare the number of false reports against a neighborhood's total immigrant population. 
+
+*This comparison assumes this reporting is driven by communities that are most likely to be impacted by ICE, and that gaps in reporting reflect awareness gaps -- not a lack of ICE.* 
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+false_reports_count <- location_data %>% 
+group_by(community, report_status) %>%
+filter(report_status == "Confirmed False") %>%
+count() %>%
+  mutate(foreign_pop = 0) %>%
+  # integrate data on foreign born pop from https://cmap.illinois.gov/data/community-data-snapshots/
+  mutate(foreign_pop = 
+           case_when(community == "ALBANY PARK" ~ 18312,
+                     community == "ARCHER HEIGHTS" ~ 6324,
+                     community == "ARMOUR SQUARE" ~ 6738,
+                     community == "BRIDGEPORT" ~ 12045, 
+                     community == "BRIGHTON PARK" ~ 17902,
+                     community == "CALUMET HEIGHTS" ~ 571,
+                     community == "CHATHAM" ~ 1037,
+                     community == "CHICAGO LAWN" ~ 15121,
+                     community == "CLEARING" ~ 6052,
+                     community == "DOUGLAS" ~ 4906,
+                     community == "EAST GARFIELD PARK" ~ 441,
+                     community == "EDGEWATER" ~ 14322,
+                     community == "ENGLEWOOD" ~ 986,
+                     community == "FOREST GLEN" ~ 3499 ,
+                     community == "FULLER PARK" ~ 222,
+                     community == "GAGE PARK" ~ 14169,
+                     community == "GARFIELD RIDGE" ~ 8967,
+                     community == "GRAND BOULEVARD" ~ 1229,
+                     community == "GREATER GRAND CROSSING" ~ 1239,
+                     community == "HEGEWISCH" ~ 1576,
+                     community == "HERMOSA" ~ 7322,
+                     community == "HUMBOLDT PARK" ~ 10638,
+                     community == "HYDE PARK" ~ 6122,
+                     community == "IRVING PARK" ~ 14084 ,
+                     community == "JEFFERSON PARK" ~ 6745,
+                     community == "KENWOOD" ~ 1557,
+                     community == "LAKE VIEW" ~ 12479,
+                     community == "LINCOLN SQUARE" ~ 9010, 
+                     community == "LOGAN SQUARE" ~ 9201,
+                     community == "LOWER WEST SIDE" ~ 11432,
+                     community == "MCKINLEY PARK" ~ 5909,
+                     community == "NEAR NORTH SIDE" ~ 19318,
+                     community == "NEAR SOUTH SIDE" ~ 6754,
+                     community == "NEAR WEST SIDE" ~ 11390,
+                     community == "NEW CITY" ~ 11801,
+                     community == "NORTH LAWNDALE" ~ 2031,
+                     community == "PORTAGE PARK" ~ 18882 ,
+                     community == "PULLMAN" ~ 278,
+                     community == "PORTAGE PARK" ~ 18882, 
+                     community == "ROGERS PARK" ~ 13325, 
+                     community == "ROSELAND" ~ 956,
+                     community == "SOUTH CHICAGO" ~ 3854,
+                     community == "SOUTH DEERING" ~ 2155,
+                     community == "SOUTH LAWNDALE" ~ 25599,
+                     community == "SOUTH SHORE" ~ 1918,
+                     community == "LOOP" ~ 11946,
+                     community == "UPTOWN" ~ 13399, 
+                     community == "WASHINGTON PARK" ~ 587, 
+                     community == "WEST ENGLEWOOD" ~ 2680, 
+                     community == "WEST GARFIELD PARK" ~ 297, 
+                     community == "WEST LAWN" ~ 11695, 
+                     community == "WEST PULLMAN" ~ 986, 
+                     community == "WOODLAWN" ~ 1508, 
+                     community == "BERWYN" ~ 13329,
+                     community == "CICERO" ~ 33249,
+                     community == "EVANSTON" ~ 12661,
+                     TRUE ~ foreign_pop)) %>%
+  mutate(incidents_per_10000 = (n/foreign_pop)*10000)
+
+# join the counts with evanston data
+map_df <- left_join(combined_sf_data, false_reports_count, by = "community")
+
+# V ..................... For False Report 
+# Use a GLM -> What GLM should I use? 
+# What are the characteristics associated with neighborhoods with no false sightings? Use a logistic regression
+# Outcome variable is dichotimized into country that has a false report or not / 0 or 1 
+
+# VI. Map my data ...................................................................
+ggplot(map_df) +
+  geom_sf(aes(fill = incidents_per_10000), color = "black", size = 0.2) +
+scale_fill_gradient(
+  low = "green", high = "red", name = "Number of False Reports") +
+  labs(title = "False Reports by Chicago Neighborhood (proportional to imm pop)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+```
