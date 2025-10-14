@@ -107,7 +107,6 @@ data_labeled <- data_labeled %>%
 
 ```
 
-# dictotimize the areas 
 
 **I. Differentiation from AirTable Data**
 
@@ -254,6 +253,17 @@ location_data <- data_labeled %>%
       community == "60607" ~ "NEAR WEST SIDE",
       community %in% c("BELMONT CRAIGIN", "BELMONT CRAIGAN", "BELMONT/CRAGIN", "BELMONT-CRAGIN", "BELMONT CRAIGN") ~ "BELMONT CRAGIN",
       community %in% c("BOILINGBROOK", "BOLLINGBROOK") ~ "BOLINGBROOK",
+      community == "ANDERSONVILLE" ~ "EDGEWATER",
+      community == "ARCHER LIMITS" ~ "GARFIELD RIDGE",
+      community == "BARLETT" ~ "BARTLETT",
+      community == "CANARYVILLE" ~ "NEW CITY",
+      community == "EASTSIDE" ~ "EAST SIDE",
+      community == "ELK GROVE" ~ "ELK GROVE VILLAGE", 
+      community == "GRESHAM" ~ "AUBURN GRESHAM",
+      community == "GALEWOOD" ~ "AUSTIN",
+      community %in% c("PULASKI PARK", "UKRAINIAN VILLAGE", "UKRANIAN VILLAGE", "EAST UKRAINIAN VILLAGE") ~ "WEST TOWN",
+      community %in% c("FULTON MARKET", "WEST LOOP", "TRI-TAYLOR", "LITTLE ITALY", "UNIVERSITY VILLAGE", "UNITED CENTER", "MEDICAL DISTRICT", "UIC") ~ "NEAR WEST SIDE",
+      community == 
       TRUE ~ community
     )
   ) %>%
@@ -326,7 +336,6 @@ include_graphics("chi_sws.png")
 When we actually look neighborhood by neighborhood, reports are actually concentrated along the west side, followed by the southwest side. 
 
 
-
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 all_reports_count <- location_data %>% 
 group_by(community, report_status) %>%
@@ -343,8 +352,7 @@ map_df <- left_join(combined_sf_data, all_reports_count, by = "community")
 # VI. Map my data ...................................................................
 ggplot(map_df) +
   geom_sf(aes(fill = n), color = "black", size = 0.2) +
-scale_fill_gradient2(
-  low = "green", high = "red", name = "Number of Reports") +
+scale_fill_gradient(low = "green", high = "red", name = "Number of Reports") +
   labs(title = "Figure 1: Reports by Chicago Neighborhood (All)") +
   theme_minimal() +
   theme(legend.position = "right")
@@ -417,7 +425,7 @@ scale_fill_gradient(
 
 2.  Nearly 1 in 5 Ice Sightings were proven false by a rapid responder (19.0%). In contrast, only 1.7% percent of public space raids were proven false and 3.8% of home raids were proven false by a responder. 21% percent of ICE sightings were also unable to be verified by a responder. 
 
-This means **40%** of the time a rapid responder is dispatched, they will either find nothing or find that the sighting is false. 
+    This means **40%** of the time a rapid responder is dispatched, they will either find nothing or find that the sighting is false. 
 
     Considering this large discrepancy in verifying ICE Sightings, I would recommend the FSN implement a triage system. Would recommend the FSN prioritize potential raids over sightings, since these are far more likely to be confirmed true. Would also suggest the FSN dispatcher query the license plate database and search for a potential match before calling a responder. 
 
