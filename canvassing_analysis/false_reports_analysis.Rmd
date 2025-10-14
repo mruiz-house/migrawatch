@@ -1,12 +1,11 @@
 ---
-title: "Prelimary AirTable Analysis on ICE Sightings and Canvassing"
+title: "Prelimary AirTable Analysis on ICE Sightings + Distribution of ICE Activity "
 subtitle: "From 2.1.25 to 9.28.25"  
 output:
   pdf_document: default
 ---
 
-GLM with Poisson function for rare outcomes
-If your hispanic proption 
+ 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
 # I. Data Cleaning 
@@ -48,7 +47,8 @@ data_raw <- data_raw %>%
   mutate(type_report = str_to_title(type_report)) %>%
   mutate(type_report = str_replace_all(type_report, "Corporate Collaboration", "Corp Collab"),
          type_report = str_replace_all(type_report, "Public Space Raid", "Pub Space Raid"),
-         location = str_replace_all(location, "Chicago - |Chicago- ", ""),
+         location = str_replace_all(location, "Chicago, |Chicago - |Chicago- ", ""),
+         location = str_replace_all(location, ", IL", ""),
          location = case_when(location == "" ~ "Chicago", TRUE ~ location))
 
 
@@ -77,12 +77,16 @@ data_labeled <- data_labeled %>%
          # Worksite Raid 
          refined_categories = str_replace_all(refined_categories, "Ice Sighting,Worksite Raid|Worksite Raid,Ice Sighting|Pub Space Raid,Worksite Raid|Worksite Raid,Pub Space Raid", 
                                               "Worksite Raid"),
+         refined_categories = case_when(unique_id == "10-09 Chicago - NW-Wrightwood & Drake" ~ "Worksite Raid", TRUE ~ refined_categories),
          # I-9 Audit
          refined_categories = str_replace_all(refined_categories, "Ice Sighting,I-9 Audit", "I-9 Audit"),
          # Corporate Collaboration 
          refined_categories = str_replace_all(refined_categories, "Ice Sighting,Corp Collab", "Corp Collab"),
         # Home raid
         refined_categories = str_replace_all(refined_categories, "Ice Sighting,Home Raid|Home Raid,Ice Sighting", "Home Raid"),
+        # Unclassified Raid (for multiple categories)
+        refined_categories = case_when(unique_id == "10-06 Orland Park-9815 El Cameno Ln, Orland Park, IL" ~ "Unclass. Raid", TRUE ~ refined_categories),
+        refined_categories = case_when(unique_id == "10-09 Evanston/Niles Township-Skokie Hospital, 9600 Gross Point Rd" ~ "Unclass. Raid", TRUE ~ refined_categories),
         # Replace blank spaces with Replace as placeholder
         refined_categories = case_when(is.na(refined_categories)|refined_categories == "" ~ "No tags", TRUE ~ refined_categories))
 
@@ -107,9 +111,9 @@ data_labeled <- data_labeled %>%
 
 **I. Differentiation from AirTable Data**
 
-The dashboard in AirTable counts each of the tags and produces a bar chart. Since this chart does considers FALSE and Rumors a classification tag, instead of its a separate variable, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 9.29.
+The dashboard in AirTable counts each of the tags and produces a bar chart. Since this chart does considers FALSE and Rumors a classification tag, instead of its a separate variable, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 10.13.
 
-For example, the visualization includes 970 ICE sightings, but this count includes sightings that have later been proven False ("Ice Sighting, False"). If we actually break down ICE sightings by whether or not they are true, false, or unproven, we find that only 272 have been proven true, 95 are confirmed false, 441 were unable to be confirmed.
+For example, the visualization includes 1,498 ICE sightings, but this count includes sightings that have later been proven False ("Ice Sighting, False"). If we actually break down ICE sightings by whether or not they are true, false, or unproven, we find that 512 were confirmed true, 129 are confirmed false, and 857 were unable to be confirmed.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -130,7 +134,7 @@ data_labeled %>%
 ggplot(data_labeled, aes(x = refined_categories)) +
    geom_bar(aes(fill = report_status )) + 
    labs(title="Histogram Classifying Types of Incidents (All Reports)", 
-       subtitle="Includes data from 2.1.2025 to 9.28.25") +
+       subtitle="Includes data from 2.1.2025 to 10.13.25") +
   theme(axis.text = element_text(size = 7)) 
 
 
@@ -138,7 +142,7 @@ ggplot(data_labeled, aes(x = refined_categories)) +
 
 **II. Analysis of Activities Verified by RRT**
 
-When we analyze incidents where a rapid responder was dispatched (619/1290 cases), we can see that the overall distribution looks similar to the broader data set.
+When we analyze incidents where a rapid responder was dispatched (1008/2360 incidents), we can see that the overall distribution looks similar to the broader data set. 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -172,7 +176,7 @@ data_labeled %>%
 
 ```
 
-Some notable exceptions exist. For example, false incidents comprise **11.75** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **22.3%** of the time (*note that a two proportion z-test confirms this gap is significant, p <.001).
+Some notable exceptions exist. For example, false incidents comprise **8.6%** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **19.0* of the time (*note that a two proportion z-test confirms this gap is significant, p <.001).
 
 This gap likely occurs because the Airtable database contains additional confirmed incidents that do not come from the FSN. 
 
@@ -210,8 +214,6 @@ cicero_berwyn_boundaries <- st_read("https://geoservices.epa.illinois.gov/arcgis
 
 colnames(cicero_berwyn_boundaries)[11] <- "shape_area"
 colnames(cicero_berwyn_boundaries)[12] <- "shape_len"
-
-
 # IV. Combine GeoSON file ...........................................................
 
 # Ensure that our coordinate systems match 
@@ -220,50 +222,94 @@ cicero_berwyn_boundaries <- st_transform(cicero_berwyn_boundaries, st_crs(chicag
 
 # Bind our data together 
 combined_sf_data <- bind_rows(chicago_communities, evanston_boundaries, cicero_berwyn_boundaries)
+```
 
-# Label neighborhoods to correspond with Chicago community areas penis54444
+
+``` {r, message = FALSE, warning = FALSE, echo = FALSE}
+# Data Cleaning 
+
+# Integrated cleaning + labeling: do broad cleaning first, then apply Chicago mappings last
 location_data <- data_labeled %>%
-  mutate(community = str_to_upper(location),
-         community = str_replace_all(community, "SWS -|SWS / ", ""),
-         community = case_when(
-                    str_detect(community, "PILSEN|LOWER WEST SIDE/HEART OF CHICAGO") ~ "LOWER WEST SIDE",
-                    str_detect(community, "LITTLE VILLAGE|LA VILLITA|MARSHALL SQUARE/HEART OF CHICAGO	") ~ "SOUTH LAWNDALE",
-                    str_detect(community, "BACK OF THE YARDS|BOTY") ~ "NEW CITY",
-                    str_detect(community, "DOWNTOWN|THE LOOP") ~ "LOOP",
-                    str_detect(community, "SOUTH LOOP") ~ "NEAR SOUTH SIDE",
-                    str_detect(community, "CHICAGO-PORTAGE PARK") ~ "PORTAGE PARK",
-                    str_detect(community, "CHICAGO UPTOWN") ~ "UPTOWN",
-                    str_detect(community, "CHICAGO ALBANY PARK") ~ "ALBANY PARK",
-                    str_detect(community, "HUMBOLT PARK") ~ "HUMBOLDT PARK",
-                    str_detect(community, "WEST LOOP|WICKER PARK|FULTON MARKET DISTRICT") ~ "NEAR WEST SIDE",
-                    str_detect(community, "WEST 54TH AND PULASKI") ~ "WEST ELSDON",
-                    str_detect(community, "BUCKTOWN") ~ "WEST TOWN",
-                    str_detect(community, "MIDWAY") ~ "GARFIELD RIDGE",
-                    str_detect(community, "CHINATOWN") ~ "ARMOUR SQUARE",
-                    str_detect(community, "BELMONT/CAGRIN") ~ "BELMONT CRAGIN",
-                    str_detect(community, "CALUMET PARK") ~ "WEST PULLMAN",
-                    str_detect(community, "BLUE ISLAND") ~ "MORGAN PARK",
-                    str_detect(community, "NORTH PULASKI|IRVING PARK|IRVING PARLK") ~ "IRVING PARK",
-                    str_detect(community, "ROSCOE VILLAGE") ~ "NORTH CENTER",
-                    str_detect(community, "LAKEVIEW") ~ "LAKE VIEW",
-                    str_detect(community, "BERWYN CICERO") ~ "BERWYN",
-                    str_detect(community, "BRIGTON PARK") ~ "BRIGHTON PARK", 
-                    str_detect(community, "ILLINOIS MEDICAL DISTRICT") ~ "NEAR WEST SIDE", 
-                    str_detect(community, "ROGER’S PARK") ~ "ROGERS PARK",
-                    str_detect(community, "GOLD COAST|NAVY PIER") ~ "NEAR NORTH SIDE",
-                    # relabel southwest data 
-                    unique_id == "09-25 Hermosa/Humboldt Park-4770 W Grand Ave, Chicago, IL 60639" ~ "HERMOSA", 
-                    unique_id == "02-24 Chicago - SWS-South Shields and West 43rd PL." ~ "FULLER PARK",
-                    unique_id == "02-26 Chicago - SWS-51st and St. Louis" ~ "GAGE PARK",
-                    unique_id == "03-07 Chicago - SWS-51st and Spaulding" ~ "GAGE PARK",
-                    unique_id == "03-14 Chicago - SWS-1352 32nd St." ~ "GAGE PARK",
-                    unique_id == "04-16 Chicago - SWS-47th and Sacramento" ~ "BRIGHTON PARK",
-                    unique_id == "04-27 Chicago - SWS -65th and Long" ~ "CLEARING",
-                    unique_id == "09-25 Chicago - SWS-W 63rd St & S California Ave" ~ "NEW CITY",
-                    unique_id == "05-14 Chicago - SWS-65th and Harlem" ~ "GARFIELD RIDGE",
-                    unique_id == "06-16 Chicago - SWS-53rd and Pulaski" ~ "ARCHER HEIGHTS",
-                    unique_id == "09-18 Chicago - SWS-42nd & Ashland" ~ "NEW CITY",
-                    TRUE ~ community)) 
+  # 1) create a normalized community column 
+  mutate(
+    community = str_to_upper(location), 
+    community = str_squish(community)
+  ) %>%
+
+  # 2) broad cleaning (remove CHICAGO- prefixes, NW/SW tokens, extra text)
+  mutate(
+    community = str_replace_all(community, "CHICAGO-", ""),
+    community = str_replace_all(community, "CHICAGO - ", ""),
+    community = str_replace_all(community, "NW / ", ""),
+    community = str_replace_all(community, "SW / ", ""),
+    community = str_replace_all(community, "NWS - ", ""),
+    community = str_replace_all(community, "SWS -|SWS / ", ""),
+    community = str_squish(community)
+  ) %>%
+
+  # 3) fix common misspellings / simple membership substitutions
+  mutate(
+    community = case_when(
+      community == "KENWOOD/HYDE PARK" ~ "KENWOOD",
+      community == "60607" ~ "NEAR WEST SIDE",
+      community %in% c("BELMONT CRAIGIN", "BELMONT CRAIGAN", "BELMONT/CRAGIN", "BELMONT-CRAGIN", "BELMONT CRAIGN") ~ "BELMONT CRAGIN",
+      community %in% c("BOILINGBROOK", "BOLLINGBROOK") ~ "BOLINGBROOK",
+      TRUE ~ community
+    )
+  ) %>%
+
+  # 4) Now apply the (Chicago) community-area rules and unique_id relabels last
+  mutate(
+    community = case_when(
+      str_detect(community, "PILSEN|LOWER WEST SIDE/HEART OF CHICAGO") ~ "LOWER WEST SIDE",
+      str_detect(community, "LITTLE VILLAGE|LA VILLITA|MARSHALL SQUARE/HEART OF CHICAGO|MARSHALL SQUARE") ~ "SOUTH LAWNDALE",
+      str_detect(community, "BACK OF THE YARDS|BOTY") ~ "NEW CITY",
+      str_detect(community, "DOWNTOWN|THE LOOP") ~ "LOOP",
+      str_detect(community, "SOUTH LOOP") ~ "NEAR SOUTH SIDE",
+      str_detect(community, "CHICAGO-PORTAGE PARK|PORTAGE PARK") ~ "PORTAGE PARK",
+      str_detect(community, "CHICAGO UPTOWN|UPTOWN") ~ "UPTOWN",
+      str_detect(community, "CHICAGO ALBANY PARK|ALBANY PARK") ~ "ALBANY PARK",
+      str_detect(community, "HUMBOLT PARK|HUMBOLDT PARK") ~ "HUMBOLDT PARK",
+      str_detect(community, "WEST LOOP|WICKER PARK|FULTON MARKET DISTRICT") ~ "NEAR WEST SIDE",
+      str_detect(community, "WEST 54TH AND PULASKI") ~ "WEST ELSDON",
+      str_detect(community, "BUCKTOWN") ~ "WEST TOWN",
+      str_detect(community, "MIDWAY") ~ "GARFIELD RIDGE",
+      str_detect(community, "CHINATOWN") ~ "ARMOUR SQUARE",
+      str_detect(community, "BELMONT/CAGRIN|BELMONT CRAGIN") ~ "BELMONT CRAGIN",
+      str_detect(community, "CALUMET PARK") ~ "WEST PULLMAN",
+      str_detect(community, "BLUE ISLAND") ~ "MORGAN PARK",
+      str_detect(community, "NORTH PULASKI|IRVING PARK|IRVING PARLK") ~ "IRVING PARK",
+      str_detect(community, "ROSCOE VILLAGE") ~ "NORTH CENTER",
+      str_detect(community, "LAKEVIEW|LAKE VIEW") ~ "LAKE VIEW",
+      str_detect(community, "BERWYN CICERO|BERWYN") ~ "BERWYN",
+      str_detect(community, "BRIGTON PARK|BRIGHTON PARK") ~ "BRIGHTON PARK",
+      str_detect(community, "ILLINOIS MEDICAL DISTRICT") ~ "NEAR WEST SIDE",
+      str_detect(community, "ROGER.?S PARK|RP|ROGERS PARK") ~ "ROGERS PARK",
+      str_detect(community, "GOLD COAST|NAVY PIER|RIVER NORTH|MAGNIFICENT MILE") ~ "NEAR NORTH SIDE",
+      str_detect(community, "GARFILED RIDGE|GARFIELD RIDGE") ~ "GARFIELD RIDGE",
+      str_detect(community, "ELGIN - HOME DEPOT|ELGIN") ~ "ELGIN",
+
+      # relabel southwest / SWS specific unique_id rows (these should override previous values)
+      unique_id == "09-25 Hermosa/Humboldt Park-4770 W Grand Ave, Chicago, IL 60639" ~ "HERMOSA",
+      unique_id == "02-24 Chicago - SWS-South Shields and West 43rd PL." ~ "FULLER PARK",
+      unique_id == "02-26 Chicago - SWS-51st and St. Louis" ~ "GAGE PARK",
+      unique_id == "03-07 Chicago - SWS-51st and Spaulding" ~ "GAGE PARK",
+      unique_id == "03-14 Chicago - SWS-1352 32nd St." ~ "GAGE PARK",
+      unique_id == "04-16 Chicago - SWS-47th and Sacramento" ~ "BRIGHTON PARK",
+      unique_id == "04-27 Chicago - SWS -65th and Long" ~ "CLEARING",
+      unique_id == "09-25 Chicago - SWS-W 63rd St & S California Ave" ~ "NEW CITY",
+      unique_id == "05-14 Chicago - SWS-65th and Harlem" ~ "GARFIELD RIDGE",
+      unique_id == "06-16 Chicago - SWS-53rd and Pulaski" ~ "ARCHER HEIGHTS",
+      unique_id == "09-18 Chicago - SWS-42nd & Ashland" ~ "NEW CITY",
+
+      # default: keep whatever is already in community after prior cleaning
+      TRUE ~ community
+    )
+  ) %>%
+
+  # final whitespace squeeze (defensive)
+  mutate(community = str_squish(community))
+
                    
 ```
 
@@ -278,6 +324,8 @@ include_graphics("chi_sws.png")
 
 
 When we actually look neighborhood by neighborhood, reports are actually concentrated along the west side, followed by the southwest side. 
+
+
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 all_reports_count <- location_data %>% 
@@ -362,113 +410,16 @@ scale_fill_gradient(
 
 ```
 
-When determining the neighborhoods to target for canvassing and KYR trainings, looking at the number of false ICE sightings is important, but also, should be considered in context. We can compare the number of false reports against a neighborhood's total immigrant population. 
-
-*This comparison assumes this reporting is driven by communities that are most likely to be impacted by ICE, and that gaps in reporting reflect awareness gaps -- not a lack of ICE.* 
-
-```{r, message = FALSE, warning = FALSE, echo = FALSE}
-false_reports_count <- location_data %>% 
-group_by(community, report_status) %>%
-filter(report_status == "Confirmed False") %>%
-count() %>%
-  mutate(foreign_pop = 0) %>%
-  # integrate data on foreign born pop from https://cmap.illinois.gov/data/community-data-snapshots/
-  mutate(foreign_pop = 
-           case_when(community == "ALBANY PARK" ~ 18312,
-                     community == "ARCHER HEIGHTS" ~ 6324,
-                     community == "ARMOUR SQUARE" ~ 6738,
-                     community == "BRIDGEPORT" ~ 12045, 
-                     community == "BRIGHTON PARK" ~ 17902,
-                     community == "CALUMET HEIGHTS" ~ 571,
-                     community == "CHATHAM" ~ 1037,
-                     community == "CHICAGO LAWN" ~ 15121,
-                     community == "CLEARING" ~ 6052,
-                     community == "DOUGLAS" ~ 4906,
-                     community == "EAST GARFIELD PARK" ~ 441,
-                     community == "EDGEWATER" ~ 14322,
-                     community == "ENGLEWOOD" ~ 986,
-                     community == "FOREST GLEN" ~ 3499 ,
-                     community == "FULLER PARK" ~ 222,
-                     community == "GAGE PARK" ~ 14169,
-                     community == "GARFIELD RIDGE" ~ 8967,
-                     community == "GRAND BOULEVARD" ~ 1229,
-                     community == "GREATER GRAND CROSSING" ~ 1239,
-                     community == "HEGEWISCH" ~ 1576,
-                     community == "HERMOSA" ~ 7322,
-                     community == "HUMBOLDT PARK" ~ 10638,
-                     community == "HYDE PARK" ~ 6122,
-                     community == "IRVING PARK" ~ 14084 ,
-                     community == "JEFFERSON PARK" ~ 6745,
-                     community == "KENWOOD" ~ 1557,
-                     community == "LAKE VIEW" ~ 12479,
-                     community == "LINCOLN SQUARE" ~ 9010, 
-                     community == "LOGAN SQUARE" ~ 9201,
-                     community == "LOWER WEST SIDE" ~ 11432,
-                     community == "MCKINLEY PARK" ~ 5909,
-                     community == "NEAR NORTH SIDE" ~ 19318,
-                     community == "NEAR SOUTH SIDE" ~ 6754,
-                     community == "NEAR WEST SIDE" ~ 11390,
-                     community == "NEW CITY" ~ 11801,
-                     community == "NORTH LAWNDALE" ~ 2031,
-                     community == "PORTAGE PARK" ~ 18882 ,
-                     community == "PULLMAN" ~ 278,
-                     community == "PORTAGE PARK" ~ 18882, 
-                     community == "ROGERS PARK" ~ 13325, 
-                     community == "ROSELAND" ~ 956,
-                     community == "SOUTH CHICAGO" ~ 3854,
-                     community == "SOUTH DEERING" ~ 2155,
-                     community == "SOUTH LAWNDALE" ~ 25599,
-                     community == "SOUTH SHORE" ~ 1918,
-                     community == "LOOP" ~ 11946,
-                     community == "UPTOWN" ~ 13399, 
-                     community == "WASHINGTON PARK" ~ 587, 
-                     community == "WEST ENGLEWOOD" ~ 2680, 
-                     community == "WEST GARFIELD PARK" ~ 297, 
-                     community == "WEST LAWN" ~ 11695, 
-                     community == "WEST PULLMAN" ~ 986, 
-                     community == "WOODLAWN" ~ 1508, 
-                     community == "BERWYN" ~ 13329,
-                     community == "CICERO" ~ 33249,
-                     community == "EVANSTON" ~ 12661,
-                     TRUE ~ foreign_pop)) %>%
-  mutate(incidents_per_10000 = (n/foreign_pop)*10000)
-
-# join the counts with evanston data
-map_df <- left_join(combined_sf_data, false_reports_count, by = "community")
-
-# V ..................... For False Report 
-# Use a GLM -> What GLM should I use? 
-# What are the characteristics associated with neighborhoods with no false sightings? Use a logistic regression
-# Outcome variable is dichotimized into country that has a false report or not / 0 or 1 
-
-# VI. Map my data ...................................................................
-ggplot(map_df) +
-  geom_sf(aes(fill = incidents_per_10000), color = "black", size = 0.2) +
-scale_fill_gradient(
-  low = "green", high = "red", name = "Number of False Reports") +
-  labs(title = "False Reports by Chicago Neighborhood (proportional to imm pop)") +
-  theme_minimal() +
-  theme(legend.position = "right")
-
-```
-
 
 **IV. Interpretation and Recommendations**
 
-1.  ICE Sightings are by far the common type of the incident. Thus far, the network has recorded 272 confirmed ICE Sightings, 121 Public Space Raids, 52 Home Raids, 9 work site raids, and 6 I-9 raids.
+1.  ICE Sightings are by far the common type of the incident. Thus far, the network has recorded 512 confirmed ICE Sightings, 241 Public Space Raids, 60 Home Raids, 37 work site raids, and 3 I-9 raids.
 
-2.  Nearly 1 in 4 Ice Sightings were proven false by a rapid responder (22.3%). In contrast, only 2.0% percent of public space raids were proven false and 4.4% of home raids were proven false by a responder.
+2.  Nearly 1 in 5 Ice Sightings were proven false by a rapid responder (19.0%). In contrast, only 1.7% percent of public space raids were proven false and 3.8% of home raids were proven false by a responder. 21% percent of ICE sightings were also unable to be verified by a responder. 
 
-    Considering this large discrepancy in valid ICE Sightings -- a gap that raises to 49.4% when we add in sightings that were unable to be validated -- I would recommend the FSN implement a triage system. One potential suggestion is to have a FSN dispatcher query the license plate database and search for a potential match before calling for a responder.
+This means **40%** of the time a rapid responder is dispatched, they will either find nothing or find that the sighting is false. 
 
-    Would also ask leadership to consider the following question: Is every sighting worth validating, especially in times when we are hurting for volunteer capacity? Is there a threshold that needs to be met for passing along a sighting?
+    Considering this large discrepancy in verifying ICE Sightings, I would recommend the FSN implement a triage system. Would recommend the FSN prioritize potential raids over sightings, since these are far more likely to be confirmed true. Would also suggest the FSN dispatcher query the license plate database and search for a potential match before calling a responder. 
 
-3.  In terms of the geographic distribution of reports, have a couple of takeaways I'd like to stress: A. High numbers of false reports are, in some ways, a good think.  That means people have utilized the ICIRR hotline and understand it's a resource (likely what we are seeing in Evanston, Downtown, Little Village, and Uptown).
+    Would also ask the rapid response leads to discuss the following questions: Is every sighting worth validating, especially in times when we are hurting for volunteer capacity? Is there a threshold that needs to be met for passing along a sighting? 
 
-    Would recommend the Little Village team, in particular, do more KYR trainings since this neighborhood has been hit particularly heavily (see figure 1) and also has a high quantity of false reports (see figure 2)
-
-4.  Lack of data on reports can be equally important to understanding a community. If we look at the South Side, we can see that there are a low quantity of reports to begin with (figure 1), even in areas with high numbers of immigrants where we could expect escalated ICE presence (figure 3). 
-
-The October 3rd raid in South Shore, tellingly, only appears in the database because it was confirmed through media coverage. No record of a report to the FSN hotline exists.  
-
-The lack of reports, therefore, is is not an indication that these areas are facing less ICE presence. Would strongly recommend additional attention is paid to the South Side to help develop infrastructure. 
