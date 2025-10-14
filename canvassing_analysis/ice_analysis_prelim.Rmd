@@ -110,9 +110,9 @@ data_labeled <- data_labeled %>%
 
 **I. Differentiation from AirTable Data**
 
-The dashboard in AirTable counts each of the tags and produces a bar chart. Since this chart does considers FALSE and Rumors a classification tag, instead of its a separate variable, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 10.13.
+The dashboard in AirTable counts each of the tags and produces a bar chart. Since this chart considers FALSE and Rumors a classification tag, instead of as a separate variable, it unintentionally overstates the I-9 audits, incidents of corporate collaboration, worksite raids, home raids, public space raids, and ICE sightings that have occurred up to 10.13.
 
-For example, the visualization includes 1,498 ICE sightings, but this count includes sightings that have later been proven False ("Ice Sighting, False"). If we actually break down ICE sightings by whether or not they are true, false, or unproven, we find that 512 were confirmed true, 129 are confirmed false, and 857 were unable to be confirmed.
+For example, the Airtable Dashboard includes 1,498 ICE sightings, but this count includes sightings that have later been proven False ("Ice Sighting, False"). If we actually break down ICE sightings by whether or not they are true, false, or unproven, we find that 512 were confirmed true, 129 are confirmed false, and 857 were unable to be confirmed.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -207,26 +207,35 @@ evanston_boundaries <- st_read("https://maps.cityofevanston.org/arcgis/rest/serv
 colnames(evanston_boundaries)[2] <- "shape_area"
 colnames(evanston_boundaries)[3] <- "shape_len"
 
-# III. Read Cicero and Bewryn GeoJSON file ......................................................
-cicero_berwyn_boundaries <- st_read("https://geoservices.epa.illinois.gov/arcgis/rest/services/Political/IllinoisPoliticalBoundaries/MapServer/2/query?where=DIST_NAME+IN+('Cicero','Berwyn')&outFields=*&f=geojson", quiet = TRUE) %>%
-  rename("community" = "DIST_NAME")
+# III. Suburbs ......................................................
+# Read full Cook County municipalities
+suburbs_sf <- st_read("Municipality.geojson", quiet = TRUE) %>%
+  rename(community = MUNICIPALITY)
 
-colnames(cicero_berwyn_boundaries)[11] <- "shape_area"
-colnames(cicero_berwyn_boundaries)[12] <- "shape_len"
+# Filter for suburbs around Chicago
+# suburbs <- c("Burbank","Oak Park","Forest Park","River Forest",
+             #"Maywood","Melrose Park","River Grove","Berwyn","Cicero", "Chicago")
+
+#suburbs_sf <- municipalities %>%
+  #filter(community %in% suburbs)
+
+
 # IV. Combine GeoSON file ...........................................................
 
 # Ensure that our coordinate systems match 
 evanston_boundaries <- st_transform(evanston_boundaries, st_crs(chicago_communities))
-cicero_berwyn_boundaries <- st_transform(cicero_berwyn_boundaries, st_crs(chicago_communities))
+suburbs_sf <- st_transform(suburbs_sf, st_crs(chicago_communities))
 
 # Bind our data together 
-combined_sf_data <- bind_rows(chicago_communities, evanston_boundaries, cicero_berwyn_boundaries)
+combined_sf_data_burbs <- bind_rows(evanston_boundaries, suburbs_sf) 
+# change to uppercase for matching 
+combined_sf_data_burbs$community <- str_to_upper(combined_sf_data_burbs$community)
+
 ```
 
 
 ``` {r, message = FALSE, warning = FALSE, echo = FALSE}
 # Data Cleaning 
-
 # Integrated cleaning + labeling: do broad cleaning first, then apply Chicago mappings last
 location_data <- data_labeled %>%
   # 1) create a normalized community column 
@@ -234,7 +243,6 @@ location_data <- data_labeled %>%
     community = str_to_upper(location), 
     community = str_squish(community)
   ) %>%
-
   # 2) broad cleaning (remove CHICAGO- prefixes, NW/SW tokens, extra text)
   mutate(
     community = str_replace_all(community, "CHICAGO-", ""),
@@ -260,10 +268,25 @@ location_data <- data_labeled %>%
       community == "EASTSIDE" ~ "EAST SIDE",
       community == "ELK GROVE" ~ "ELK GROVE VILLAGE", 
       community == "GRESHAM" ~ "AUBURN GRESHAM",
-      community == "GALEWOOD" ~ "AUSTIN",
+      community == "SCOTTSDALE" ~ "ASHBURN",
+      community %in% c("WRIGLEYVILLE", "WRIGLEY", "WRIGLEY FIELD", "SOUTHPORT") ~ "LAKE VIEW",
+      community %in% c("GALEWOOD", "SOUTH AUSTIN") ~ "AUSTIN",
       community %in% c("PULASKI PARK", "UKRAINIAN VILLAGE", "UKRANIAN VILLAGE", "EAST UKRAINIAN VILLAGE") ~ "WEST TOWN",
-      community %in% c("FULTON MARKET", "WEST LOOP", "TRI-TAYLOR", "LITTLE ITALY", "UNIVERSITY VILLAGE", "UNITED CENTER", "MEDICAL DISTRICT", "UIC") ~ "NEAR WEST SIDE",
-      community == 
+      community %in% c("FULTON MARKET", "WEST LOOP", "TRI TAYLOR", "TRI-TAYLOR", "LITTLE ITALY", "UNIVERSITY VILLAGE", "UNITED CENTER", "MEDICAL DISTRICT", "UIC") ~ "NEAR WEST SIDE",
+      community %in% c("PETERSON PARK", "MAYFAIR") ~ "NORTH PARK",
+      community == "DOUGLASS PARK" ~ "NORTH LAWNDALE",
+      community == "CHRYSLER VILLAGE" ~ "CLEARING",
+      community == "KELVYN PARK" ~ "HERMOSA",
+      community == "LITTLE VILLAS" ~ "SOUTH LAWNDALE",
+      community %in% c("CALUMUT HEIGHTS", "CALUMET") ~ "CALUMET HEIGHTS",
+      community == "CHCIAGO- ENGLEWOOD" ~ "ENGLEWOOD",
+      community == "SCHAUMBERG" ~ "SCHAUMBURG",
+      community == "STREETERVILLE" ~ "NEAR NORTH",
+      community %in% c("UNCLEAR", "UNKNOWN", "UNKNOWN", "UNSURE") ~ "UNCLEAR BASED ON CALL",
+      community == "WEST ELSTON" ~ "WEST ELSDON",
+      community %in% c("REVENSWOOD", "RAVENSWOOD") ~ "LINCOLN SQUARE",
+      community == "LINCOLN PARK (WEST)" ~ "LINCOLN PARK",
+      community == "CHICAGO" ~ "UNSPEC CHI",
       TRUE ~ community
     )
   ) %>%
@@ -323,7 +346,7 @@ location_data <- data_labeled %>%
                    
 ```
 
-Airtable data would suggest that the reports are concentrated along the Northwest Side, followed by the Southwest side. However, this assessment is a very broad one and aggregates data from multiple neighborhood teams. 
+Airtable data would suggest that reports are concentrated along the Northwest Side, followed by the Southwest side. However, this assessment is a very broad one and aggregates data from multiple neighborhood teams. 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, out.width= "50%"}
 include_graphics("chi_nws.png")
@@ -341,13 +364,9 @@ all_reports_count <- location_data %>%
 group_by(community, report_status) %>%
 count() 
 
-# produce table visual
-all_reports_count %>%
-  pivot_wider(names_from = report_status, values_from = n) %>%
-  kable()
 
 # join the counts with evanston data
-map_df <- left_join(combined_sf_data, all_reports_count, by = "community")
+map_df <- left_join(chicago_communities, all_reports_count, by = "community")
 
 # VI. Map my data ...................................................................
 ggplot(map_df) +
@@ -369,7 +388,7 @@ filter(report_status == "Confirmed True") %>%
 count() 
 
 # join the counts with evanston data
-map_df <- left_join(combined_sf_data, confirmed_reports_count, by = "community")
+map_df <- left_join(chicago_communities, confirmed_reports_count, by = "community")
 
 # VI. Map my data ...................................................................
 ggplot(map_df) +
@@ -403,7 +422,7 @@ count() # %>%
   
 
 # join the counts with evanston data
-map_df <- left_join(combined_sf_data, false_reports_count, by = "community")
+map_df <- left_join(chicago_communities, false_reports_count, by = "community")
 
 
 # VI. Map my data ...................................................................
@@ -416,6 +435,24 @@ scale_fill_gradient(
   theme_minimal() +
   theme(legend.position = "right")
 
+```
+H
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+all_reports_count_burbs <- location_data %>% 
+group_by(community, report_status) %>%
+count() 
+
+
+# join the counts with evanston data
+map_df <- left_join(combined_sf_data_burbs, all_reports_count_burbs, by = "community") %>%
+  filter(!is.na(community))
+# VI. Map my data ...................................................................
+ggplot(map_df) +
+  geom_sf(aes(fill = n), color = "black", size = 0.2) +
+scale_fill_gradient(low = "green", high = "red", name = "Number of Reports") +
+  labs(title = "Figure 1: Reports by Chicago Surburbs (All)") +
+  theme_minimal() +
+  theme(legend.position = "right")
 ```
 
 
@@ -430,4 +467,13 @@ scale_fill_gradient(
     Considering this large discrepancy in verifying ICE Sightings, I would recommend the FSN implement a triage system. Would recommend the FSN prioritize potential raids over sightings, since these are far more likely to be confirmed true. Would also suggest the FSN dispatcher query the license plate database and search for a potential match before calling a responder. 
 
     Would also ask the rapid response leads to discuss the following questions: Is every sighting worth validating, especially in times when we are hurting for volunteer capacity? Is there a threshold that needs to be met for passing along a sighting? 
+    
+**V. Appendix of Sightings per Neighborhood **
+```{r}
+# produce table visual
+all_reports_count %>%
+  pivot_wider(names_from = report_status, values_from = n) %>%
+  kable()
+```
+
 
