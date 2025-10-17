@@ -7,6 +7,18 @@ GLM with Poisson function for rare outcomes
 If your hispanic proption
 # dictotimize the areas 
 
+# Need to calculate the variance 
+# If the mean is similar or difference -> figure out which model to use 
+# How each variable you put into the model contributes to an additional False Report 
+# mutate(calculated_variance = (n - 2.84(n))^2)
+
+# Going to need to merge another dataset
+# Based on my model, X hispanics correspond with Y 
+# We could create a hypotehtical neighborhood ... if it's X percent hispanic, 
+# We can figure out general model that allows us to the predict this 
+# General Characteristics of a neighborhood 
+# Could you find how much false reports in hypothetical country occur per 5% increase in hispanic population ... # Where are they distributed? What is causing false reports? What is correlated with grey areas? 
+
 3.  In terms of the geographic distribution of reports, have a couple of takeaways I'd like to stress: A. High numbers of false reports are, in some ways, a good think.  That means people have utilized the ICIRR hotline and understand it's a resource (likely what we are seeing in Evanston, Downtown, Little Village, and Uptown).
 
     Would recommend the Little Village team, in particular, do more KYR trainings since this neighborhood has been hit particularly heavily (see figure 1) and also has a high quantity of false reports (see figure 2)

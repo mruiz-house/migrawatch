@@ -157,7 +157,7 @@ data_labeled %>%
 ggplot(aes(x = refined_categories)) +
    geom_bar(aes(fill = report_status)) + 
    labs(title="Histogram Classifying Types of Incidents Verified by Rapid Responders", 
-       subtitle="Includes data from 2.1.25 to 9.25.25") +
+       subtitle="Includes data from 2.1.25 to 10.13.25") +
   theme(axis.text = element_text(size = 7)) 
 
 
@@ -361,7 +361,7 @@ When we actually look neighborhood by neighborhood, reports are actually concent
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 all_reports_count <- location_data %>% 
-group_by(community, report_status) %>%
+group_by(community) %>%
 count() 
 
 
@@ -407,20 +407,8 @@ False reports are clustered in the following neighborhoods:
 false_reports_count <- location_data %>% 
 group_by(community, report_status) %>%
 filter(report_status == "Confirmed False") %>%
-count() # %>%
-# Need to calculate the variance 
-# If the mean is similar or difference -> figure out which model to use 
-# How each variable you put into the model contributes to an additional False Report 
-# mutate(calculated_variance = (n - 2.84(n))^2)
-
-# Going to need to merge another dataset
-# Based on my model, X hispanics correspond with Y 
-# We could create a hypotehtical neighborhood ... if it's X percent hispanic, 
-# We can figure out general model that allows us to the predict this 
-# General Characteristics of a neighborhood 
-# Could you find how much false reports in hypothetical country occur per 5% increase in hispanic population ... # Where are they distributed? What is causing false reports? What is correlated with grey areas? 
+count() 
   
-
 # join the counts with evanston data
 map_df <- left_join(chicago_communities, false_reports_count, by = "community")
 
@@ -436,7 +424,7 @@ scale_fill_gradient(
   theme(legend.position = "right")
 
 ```
-H
+
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 all_reports_count_burbs <- location_data %>% 
 group_by(community, report_status) %>%
@@ -469,11 +457,44 @@ scale_fill_gradient(low = "green", high = "red", name = "Number of Reports") +
     Would also ask the rapid response leads to discuss the following questions: Is every sighting worth validating, especially in times when we are hurting for volunteer capacity? Is there a threshold that needs to be met for passing along a sighting? 
     
 **V. Appendix of Sightings per Neighborhood **
-```{r}
-# produce table visual
+Top 15 Neighborhoods with Reports of ICE Activity: 
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+# Top 15 Neighborhoods with Reports of ICE Activity (Regardless of Validity)
 all_reports_count %>%
-  pivot_wider(names_from = report_status, values_from = n) %>%
+  arrange(desc(n)) %>%
+  head(15) %>%
+  # Change the name of certain neighborhoods for legibility
+  mutate(community = case_when(
+                     community == "SOUTH LAWNDALE" ~ "LITTLE VILLAGE",
+                     community == "NEW CITY" ~ "BACK OF THE YARDS",
+                     community == "LOWER WEST SIDE" ~ "PILSEN",
+                   TRUE ~ community)) %>%
   kable()
 ```
 
+Top 15 Neighborhoods with Confirmed True ICE Activity 
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+confirmed_reports_count %>%
+  arrange(desc(n)) %>%
+  head(15) %>%
+   mutate(community = case_when(
+                     community == "SOUTH LAWNDALE" ~ "LITTLE VILLAGE",
+                     community == "NEW CITY" ~ "BACK OF THE YARDS",
+                     community == "LOWER WEST SIDE" ~ "PILSEN",
+                   TRUE ~ community)) %>%
+  kable()
+```
+
+Top 15 Neighborhoods with Confirmed False ICE Activity 
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+false_reports_count %>%
+  arrange(desc(n)) %>%
+  head(15) %>%
+   mutate(community = case_when(
+                     community == "SOUTH LAWNDALE" ~ "LITTLE VILLAGE",
+                     community == "NEW CITY" ~ "BACK OF THE YARDS",
+                     community == "LOWER WEST SIDE" ~ "PILSEN",
+                   TRUE ~ community)) %>%
+  kable()
+```
 
