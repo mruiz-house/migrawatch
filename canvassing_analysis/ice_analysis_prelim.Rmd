@@ -292,30 +292,12 @@ location_data <- data_labeled %>%
       str_detect(community, "NORTH PULASKI|IRVING PARK|IRVING PARLK") ~ "IRVING PARK",
       str_detect(community, "ROSCOE VILLAGE") ~ "NORTH CENTER",
       str_detect(community, "LAKEVIEW|LAKE VIEW") ~ "LAKE VIEW",
-      str_detect(community, "BERWYN CICERO|BERWYN") ~ "CITY OF BERYWYN",
+      str_detect(community, "BERWYN CICERO|BERWYN") ~ "CITY OF BERWYN",
       str_detect(community, "BRIGTON PARK|BRIGHTON PARK") ~ "BRIGHTON PARK",
       str_detect(community, "ILLINOIS MEDICAL DISTRICT") ~ "NEAR WEST SIDE",
       str_detect(community, "ROGER.?S PARK|RP|ROGERS PARK") ~ "ROGERS PARK",
       str_detect(community, "GOLD COAST|NAVY PIER|RIVER NORTH|MAGNIFICENT MILE") ~ "NEAR NORTH SIDE",
       str_detect(community, "GARFILED RIDGE|GARFIELD RIDGE") ~ "GARFIELD RIDGE",
-      # Change suburbs to conform with naming conventions 
-      str_detect(community, "ELGIN") ~ "CITY OF ELGIN",
-      str_detect(community, "EVANSTON") ~ "CITY OF EVANSTON",
-      str_detect(community, "DIXMOOR") ~ "VILLAGE OF DIXMOOR",
-      str_detect(community, "HIGHLAND PARK") ~ "VILLAGE OF HIGHLAND PARK",
-      str_detect(community, "EVERGREEN PARK") ~ "VILLAGE OF EVERGREEN PARK",
-      str_detect(community, "CHICAGO RIDGE") ~ "VILLAGE OF CHICAGO RIDGE",
-      str_detect(community, "ELMWOOD PARK") ~ "VILLAGE OF ELMWOOD PARK",
-      str_detect(community, "HICKORY HILLS") ~ "CITY OF HICKORY HILLS",
-      str_detect(community, "CITY OF CICERO") ~ "CITY OF CICERO",
-      str_detect(community, "SKOKIE") ~ "VILLAGE OF SKOKIE",
-      str_detect(community, "NILES") ~ "VILLAGE OF NILES",
-      str_detect(community, "WILMETTE") ~ "VILLAGE OF WILMETTE",
-      str_detect(community, "LINCOLNWOOD") ~ "VILLAGE OF LINCOLNWOOD",
-      str_detect(community, "NORTHBROOK") ~"VILLAGE OF NORTHBROOK",
-      
-      
-
       # relabel southwest / SWS specific unique_id rows (these should override previous values)
       unique_id == "09-25 Hermosa/Humboldt Park-4770 W Grand Ave, Chicago, IL 60639" ~ "HERMOSA",
       unique_id == "02-24 Chicago - SWS-South Shields and West 43rd PL." ~ "FULLER PARK",
@@ -331,14 +313,97 @@ location_data <- data_labeled %>%
       unique_id == "02-17 Chicago - NWS-7435 W Talcott Ave, Chicago, IL 60631" ~ "NORWOOD PARK",
       unique_id == "10-09 Chicago - NW-Armitage & Kilbourn" ~ "HERMOSA",
       unique_id == "10-09 Chicago - NW-Cicero & Armitage" ~ "BELMONT CRAIGIN",
-
+      unique_id == "10-09 Chicago - NW-Fullerton & Central Park" ~ "LOGAN SQUARE",
+      unique_id == "10-09 Chicago - NW-Wrightwood & Drake" ~ "LOGAN SQUARE", 
+      unique_id == "10-06 Chicago - NWS-Humboldt & Cortez" ~ "HUMBOLDT PARK", 
+      unique_id == "10-06 Chicago - NWS-North & Kostner" ~ "HERMOSA",
+      unique_id == "10-06 Chicago - NWS-W North Ave & N Tripp Ave" ~ "HERMOSA",
+      unique_id == "10-06 Chicago - NWS-Palmer & Kildare" ~ "HERMOSA",
+      # seems to straddle multiple community areas, picked 
+      unique_id == "10-06 Chicago - NWS-Pulaski & Diversey" ~ "LOGAN SQUARE",
+      unique_id == "10-06 Chicago - NWS-North & Kedzie" ~ "LOGAN SQUARE",
+      unique_id == "10-06 Chicago - NWS-Humboldt & Cortland" ~ "LOGAN SQUARE",
+      unique_id == "10-06 Chicago - NWS-Homan & Division" ~ "HUMBOLDT PARK",
+      unique_id == "10-02 Chicago - NWS-N Waller Ave & W North Ave" ~ "AUSTIN",
+      unique_id == "03-05 Chicago - NWS-Albany Park" ~ "ALBANY PARK",
+      unique_id == "05-14 Chicago - NWS-4001 N Kildare" ~ "HUMBOLDT PARK",
+      unique_id == "05-22 Chicago - NWS-Cicero and Armitage" ~ "BELMONT CRAIGIN",
+      unique_id == "03-02 Chicago - NWS-6900 W Belmont" ~ "DUNNING",
+      unique_id == "10-07 Chicago - NWS-W Montrose Ave & N California Ave, Chicago, IL 60618" ~ "ALBANY PARK",
+      unique_id == "09-18 Chicago - NWS-Grant at Lamon" ~ "BELMONT CRAGIN", 
+      unique_id == "09-18 Chicago - NWS-Grand & Rockwell" ~ "WEST TOWN", 
+      unique_id == "08-28 Chicago - NWS-2146 N Milwaukee Ave" ~ "LOGAN SQUARE", 
+      unique_id == "06-20 Chicago - NWS-Laramie and Fullerton" ~ "BELMONT CRAGIN", 
+      unique_id == "02-24 Chicago - SWS-South Shields and West 43rd PL." ~ "FULLER PARK",
+      unique_id == "04-28 Chicago - SWS-51st and Elizabeth" ~ "NEW CITY",
+      unique_id == "09-18 Chicago - SWS-71st & Damen" ~ "WEST ENGLEWOOD",
+      unique_id == "09-18 Chicago - SWS-Archer & Pulaski" ~ "ARCHER HEIGHTS",
+      unique_id == "09-18 Chicago - SWS-42nd Street & Ashland Ave., 60609" ~ "NEW CITY",
+      unique_id == "10-02 Chicago - SWS-Archer & Halsted" ~ "BRIDGEPORT",
+      unique_id == "10-02 Chicago - SWS-1430 S Ashland Ave" ~ "NEAR WEST SIDE",
+      unique_id == "10-02 Chicago - SW-1701 W 47th St, Chicago, IL 60609" ~ "NEW CITY",
+      # Borderline case - choosing west elsdon
+      unique_id == "10-06 Chicago - SW-W 59th St & S Pulaski Rd" ~ "WEST ELSDON",
+      unique_id == "10-06 Chicago - SW-3721 W 60th Pl." ~ "WEST LAWN",
       # default: keep whatever is already in community after prior cleaning
       TRUE ~ community
     )
-  ) %>%
+  ) 
 
-  # final whitespace squeeze (defensive)
-  mutate(community = str_squish(community))
+
+# Make sure suburb names match the community areas spelling 
+# Function: match_to_official
+# Purpose:  Standardize community names in 'location_data' by matching them 
+#           against a lookup table ('mapping') that maps informal or shortened
+#           MUNICIPALITY names to their corresponding official community names.
+#
+# Arguments:
+#   x : A single character string (community name) to standardize.
+#
+# Returns:
+#   A single character string:
+#     - The matched official community name from 'mapping', if found.
+#     - The original input value if no match is found or if input is NA/blank.
+#
+# Dependencies:
+#   - Requires 'mapping' dataframe to exist in the global environment with:
+#       * mapping$MUNICIPALITY : short/informal name or pattern to search for.
+#       * mapping$community    : standardized / official community name.
+#   - Uses functions from 'dplyr' and 'stringr' (tidyverse).
+
+mapping <- suburbs_sf %>%
+  filter(!is.na(MUNICIPALITY), str_squish(MUNICIPALITY) != "") %>%
+  transmute(
+    MUNICIPALITY = str_squish(MUNICIPALITY),   # pattern to search for
+    community = community              
+  ) %>%
+  # I don't want Chicago screwing up my search
+  filter(MUNICIPALITY != "Chicago")
+
+ # find all mapping rows where informal name appears in suburbs_df$MUNICIPALITY (case-insensitive)\
+
+match_to_official <- function(x) {
+  # Preserve NA or empty strings
+  if (is.na(x) || str_trim(x) == "") return(x)
+  
+  # Find all mapping rows where 'MUNICIPALITY' pattern appears in x (case-insensitive)
+  matches <- mapping %>%
+    filter(str_detect(x, regex(MUNICIPALITY, ignore_case = TRUE))) %>%
+    pull(community)
+  
+  # If no matches, return original value; else return the first matching community
+  if (length(matches) == 0) x else matches[1]
+}
+
+
+
+# Apply to the whole column (vectorized via purrr::map_chr)
+location_data <- location_data %>%
+  mutate(
+# map_chr works by taking community column and looping over function map_chr(x, function)
+    community = map_chr(community, match_to_official)
+  )
+
 
                    
 ```
@@ -353,8 +418,11 @@ include_graphics("chi_sws.png")
 ```
 
 
-When we actually look neighborhood by neighborhood, reports are actually concentrated along the west side, followed by the southwest side. 
+When we actually look neighborhood by neighborhood, we can see that the west-side has been hit the hardest. Cicero has experienced 59 (true) incidents, followed by Little Village (46).  
 
+The Southwest side follows with true incidents, with Brighton Park (44), Back of the Yards (23) and Gage Park (17) being particularly affected. 
+
+Finally, true incidents along the northwest side are clustered in Hermosa (27), Humboldt Park (23), and Belmont Cragin (21). 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 # map all reports
@@ -380,13 +448,13 @@ Confirmed reports are clustered in the following neighborhoods:
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
-confirmed_reports_count <- location_data %>% 
+true_reports_count <- location_data %>% 
 group_by(community, report_status) %>%
 filter(report_status == "Confirmed True") %>%
 count() 
 
 # join the counts with evanston data
-map_df <- left_join(chicago_communities, confirmed_reports_count, by = "community")
+map_df <- left_join(chicago_communities, true_reports_count, by = "community")
 
 # VI. Map my data ...................................................................
 ggplot(map_df) +
@@ -429,15 +497,38 @@ scale_fill_gradient(
 map_df <- left_join(suburbs_sf, all_reports_count, by = "community") 
 
 # VI. Map my data ...................................................................
-# ggplot(map_df) +
-  # geom_sf(aes(fill = n), color = "black", size = 0.2) +
-# scale_fill_gradient(low = "green", high = "red", name = "Number of Reports") +
- # labs(title = "Figure 1: Reports by Chicago Neighborhood (All)") +
-  #theme_minimal() +
-  # theme(legend.position = "right")
+ggplot(map_df) +
+geom_sf(aes(fill = n), color = "black", size = 0.2) +
+scale_fill_gradient(low = "green", high = "red", name = "Number of Reports") +
+labs(title = "Figure 4: Reports by Chicago Suburb (All)") +
+  theme_minimal() +
+  theme(legend.position = "right")
 
 ```
+``` {r, message = FALSE, warning = FALSE, echo = FALSE}
+# join the counts with data from the suburbs
+map_df <- left_join(suburbs_sf, true_reports_count, by = "community") 
 
+# VI. Map my data ...................................................................
+ggplot(map_df) +
+geom_sf(aes(fill = n), color = "black", size = 0.2) +
+scale_fill_gradient(low = "green", high = "red", name = "Number of True Reports") +
+labs(title = "Figure 5: True Reports by Chicago Suburb (All)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+```{r}
+map_df <- left_join(suburbs_sf, false_reports_count, by = "community") 
+
+# VI. Map my data ...................................................................
+ggplot(map_df) +
+geom_sf(aes(fill = n), color = "black", size = 0.2) +
+scale_fill_gradient(low = "green", high = "red", name = "Number of False Reports") +
+labs(title = "Figure 6: False Reports by Chicago Suburb (All)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
 
 **IV. Interpretation and Recommendations**
 
@@ -452,8 +543,9 @@ map_df <- left_join(suburbs_sf, all_reports_count, by = "community")
     Would also ask the rapid response leads to discuss the following questions: Is every sighting worth validating, especially in times when we are hurting for volunteer capacity? Is there a threshold that needs to be met for passing along a sighting? 
     
 **V. Appendix of Sightings per Neighborhood **
-Top 15 Neighborhoods with Reports of ICE Activity: 
+Top 15 Neighborhoods with Reports of ICE Activity within Chicago: 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
 # Top 15 Neighborhoods with Reports of ICE Activity (Regardless of Validity)
 all_reports_count %>%
   arrange(desc(n)) %>%
@@ -469,7 +561,7 @@ all_reports_count %>%
 
 Top 15 Neighborhoods with Confirmed True ICE Activity 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
-confirmed_reports_count %>%
+true_reports_count %>%
   arrange(desc(n)) %>%
   head(15) %>%
    mutate(community = case_when(
