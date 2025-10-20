@@ -1,6 +1,6 @@
 ---
 title: "Prelimary AirTable Analysis on ICE Sightings + Distribution of ICE Activity "
-subtitle: "From 2.1.25 to 9.28.25"  
+subtitle: "From 2.1.25 to 10.13.25"  
 output:
   pdf_document: default
 ---
@@ -175,9 +175,9 @@ data_labeled %>%
 
 ```
 
-Some notable exceptions exist. For example, false incidents comprise **8.6%** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **19.0* of the time (*note that a two proportion z-test confirms this gap is significant, p <.001).
+Some notable exceptions exist. For example, false incidents comprise **8.6%** of total ICE sightings, but where a rapid responder was dispatched, incidents were proven false **19.0** of the time (*note that a two proportion z-test confirms this gap is significant, p <.0001).
 
-This gap likely occurs because the Airtable database contains additional confirmed incidents that do not come from the FSN. 
+This discrepancy likely occurs because the Airtable database contains additional confirmed incidents that do not come from the FSN. 
 
 ``` {r, message = FALSE, warning = FALSE, echo = FALSE}
 # Set up for our statistics test 
@@ -201,35 +201,13 @@ chicago_communities <- st_read(geojson_file, quiet = TRUE) %>%
 mutate(shape_area = as.numeric(shape_area),
        shape_len = as.numeric(shape_len))
 
-# II. Read Evanston GeoJSON file............................................................
-evanston_boundaries <- st_read("https://maps.cityofevanston.org/arcgis/rest/services/OpenData/ArcGISOpenData/MapServer/0/query?where=1=1&outFields=*&f=geojson", quiet = TRUE) %>%
-   mutate(community = "EVANSTON")
-colnames(evanston_boundaries)[2] <- "shape_area"
-colnames(evanston_boundaries)[3] <- "shape_len"
-
-# III. Suburbs ......................................................
+# II. Suburbs ......................................................
 # Read full Cook County municipalities
 suburbs_sf <- st_read("Municipality.geojson", quiet = TRUE) %>%
-  rename(community = MUNICIPALITY)
+  rename(community = AGENCY_DESC)
 
-# Filter for suburbs around Chicago
-# suburbs <- c("Burbank","Oak Park","Forest Park","River Forest",
-             #"Maywood","Melrose Park","River Grove","Berwyn","Cicero", "Chicago")
-
-#suburbs_sf <- municipalities %>%
-  #filter(community %in% suburbs)
-
-
-# IV. Combine GeoSON file ...........................................................
-
-# Ensure that our coordinate systems match 
-evanston_boundaries <- st_transform(evanston_boundaries, st_crs(chicago_communities))
-suburbs_sf <- st_transform(suburbs_sf, st_crs(chicago_communities))
-
-# Bind our data together 
-combined_sf_data_burbs <- bind_rows(evanston_boundaries, suburbs_sf) 
-# change to uppercase for matching 
-combined_sf_data_burbs$community <- str_to_upper(combined_sf_data_burbs$community)
+# capitalize our suburb names! 
+suburbs_sf$community <- str_to_upper(suburbs_sf$community)
 
 ```
 
@@ -314,13 +292,29 @@ location_data <- data_labeled %>%
       str_detect(community, "NORTH PULASKI|IRVING PARK|IRVING PARLK") ~ "IRVING PARK",
       str_detect(community, "ROSCOE VILLAGE") ~ "NORTH CENTER",
       str_detect(community, "LAKEVIEW|LAKE VIEW") ~ "LAKE VIEW",
-      str_detect(community, "BERWYN CICERO|BERWYN") ~ "BERWYN",
+      str_detect(community, "BERWYN CICERO|BERWYN") ~ "CITY OF BERYWYN",
       str_detect(community, "BRIGTON PARK|BRIGHTON PARK") ~ "BRIGHTON PARK",
       str_detect(community, "ILLINOIS MEDICAL DISTRICT") ~ "NEAR WEST SIDE",
       str_detect(community, "ROGER.?S PARK|RP|ROGERS PARK") ~ "ROGERS PARK",
       str_detect(community, "GOLD COAST|NAVY PIER|RIVER NORTH|MAGNIFICENT MILE") ~ "NEAR NORTH SIDE",
       str_detect(community, "GARFILED RIDGE|GARFIELD RIDGE") ~ "GARFIELD RIDGE",
-      str_detect(community, "ELGIN - HOME DEPOT|ELGIN") ~ "ELGIN",
+      # Change suburbs to conform with naming conventions 
+      str_detect(community, "ELGIN") ~ "CITY OF ELGIN",
+      str_detect(community, "EVANSTON") ~ "CITY OF EVANSTON",
+      str_detect(community, "DIXMOOR") ~ "VILLAGE OF DIXMOOR",
+      str_detect(community, "HIGHLAND PARK") ~ "VILLAGE OF HIGHLAND PARK",
+      str_detect(community, "EVERGREEN PARK") ~ "VILLAGE OF EVERGREEN PARK",
+      str_detect(community, "CHICAGO RIDGE") ~ "VILLAGE OF CHICAGO RIDGE",
+      str_detect(community, "ELMWOOD PARK") ~ "VILLAGE OF ELMWOOD PARK",
+      str_detect(community, "HICKORY HILLS") ~ "CITY OF HICKORY HILLS",
+      str_detect(community, "CITY OF CICERO") ~ "CITY OF CICERO",
+      str_detect(community, "SKOKIE") ~ "VILLAGE OF SKOKIE",
+      str_detect(community, "NILES") ~ "VILLAGE OF NILES",
+      str_detect(community, "WILMETTE") ~ "VILLAGE OF WILMETTE",
+      str_detect(community, "LINCOLNWOOD") ~ "VILLAGE OF LINCOLNWOOD",
+      str_detect(community, "NORTHBROOK") ~"VILLAGE OF NORTHBROOK",
+      
+      
 
       # relabel southwest / SWS specific unique_id rows (these should override previous values)
       unique_id == "09-25 Hermosa/Humboldt Park-4770 W Grand Ave, Chicago, IL 60639" ~ "HERMOSA",
@@ -334,6 +328,9 @@ location_data <- data_labeled %>%
       unique_id == "05-14 Chicago - SWS-65th and Harlem" ~ "GARFIELD RIDGE",
       unique_id == "06-16 Chicago - SWS-53rd and Pulaski" ~ "ARCHER HEIGHTS",
       unique_id == "09-18 Chicago - SWS-42nd & Ashland" ~ "NEW CITY",
+      unique_id == "02-17 Chicago - NWS-7435 W Talcott Ave, Chicago, IL 60631" ~ "NORWOOD PARK",
+      unique_id == "10-09 Chicago - NW-Armitage & Kilbourn" ~ "HERMOSA",
+      unique_id == "10-09 Chicago - NW-Cicero & Armitage" ~ "BELMONT CRAIGIN",
 
       # default: keep whatever is already in community after prior cleaning
       TRUE ~ community
@@ -360,6 +357,7 @@ When we actually look neighborhood by neighborhood, reports are actually concent
 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
+# map all reports
 all_reports_count <- location_data %>% 
 group_by(community) %>%
 count() 
@@ -426,21 +424,18 @@ scale_fill_gradient(
 ```
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
-all_reports_count_burbs <- location_data %>% 
-group_by(community, report_status) %>%
-count() 
 
+# join the counts with data from the suburbs
+map_df <- left_join(suburbs_sf, all_reports_count, by = "community") 
 
-# join the counts with evanston data
-map_df <- left_join(combined_sf_data_burbs, all_reports_count_burbs, by = "community") %>%
-  filter(!is.na(community))
 # VI. Map my data ...................................................................
-ggplot(map_df) +
-  geom_sf(aes(fill = n), color = "black", size = 0.2) +
-scale_fill_gradient(low = "green", high = "red", name = "Number of Reports") +
-  labs(title = "Figure 1: Reports by Chicago Surburbs (All)") +
-  theme_minimal() +
-  theme(legend.position = "right")
+# ggplot(map_df) +
+  # geom_sf(aes(fill = n), color = "black", size = 0.2) +
+# scale_fill_gradient(low = "green", high = "red", name = "Number of Reports") +
+ # labs(title = "Figure 1: Reports by Chicago Neighborhood (All)") +
+  #theme_minimal() +
+  # theme(legend.position = "right")
+
 ```
 
 
