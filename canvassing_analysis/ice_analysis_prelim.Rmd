@@ -461,7 +461,7 @@ ggplot(map_df) +
   geom_sf(aes(fill = n), color = "black", size = 0.2) +
 scale_fill_gradient(
   low = "green", high = "red", name = "Number of Confirmed Reports") +
-  labs(title = "Figure 2: Confirmed Reports by Chicago Neighborhood") +
+  labs(title = "Figure 1: Confirmed Reports by Chicago Neighborhood") +
   theme_minimal() +
   theme(legend.position = "right")
 ```
@@ -513,7 +513,7 @@ map_df <- left_join(suburbs_sf, true_reports_count, by = "community")
 ggplot(map_df) +
 geom_sf(aes(fill = n), color = "black", size = 0.2) +
 scale_fill_gradient(low = "green", high = "red", name = "Number of True Reports") +
-labs(title = "Figure 5: True Reports by Chicago Suburb (All)") +
+labs(title = "Figure 2: True Reports by Chicago Suburb (All)") +
   theme_minimal() +
   theme(legend.position = "right")
 ```
