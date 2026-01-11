@@ -1,7 +1,7 @@
 library(tidyverse)
 library(stringr)
 # Make sure to quote paths!
-addresses <- read_csv("dashboard_scripts/street_addresses.csv")
+addresses <- read_csv("dashboard_scripts/Updated_street_addresses.csv")
 
 # Transfer over cities and states to new column
 clean_addresses <- addresses %>%
