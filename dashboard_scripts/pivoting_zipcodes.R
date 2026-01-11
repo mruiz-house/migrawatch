@@ -12,4 +12,4 @@ df_reports <- zip_codes %>%
   # drop any empty fragments
   filter(Raids != "")
 
-write_csv(df_reports, "cleaned_zip_codes")
+write_csv(df_reports, "cleaned_zip_codes.csv")
