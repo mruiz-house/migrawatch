@@ -2,8 +2,8 @@ library(tidyverse)
 library(stringr)
 # Make sure to quote paths!
 addresses <- read_csv("dashboard_scripts/Updated_street_addresses.csv") %>%
-  filter(`Number of People Detained` >=1 ) %>%
-  rename(street = `Street Address or Intersection`) %>%
+  rename(street = `Street Address or Intersection`,
+         Zipcode = `ZIP Code`) %>%
   mutate(City = "",
          State = "")
 
@@ -38,6 +38,12 @@ clean_addresses <- addresses %>%
 
 # String Squish! 
 clean_addresses$street <- str_squish(clean_addresses$street) 
+
+# Reorder columns to conform with what census expects 
+clean_addresses <- clean_addresses %>%
+  subset(select = -c(`Neighborhood or City`, `Number of People Detained`)) %>% 
+  relocate(Zipcode, .after = State)
+
 
 #write our beautiful csv 
 write_csv(clean_addresses, "cleaned_addresses.csv")
